@@ -5,6 +5,29 @@ import mila from 'markdown-it-link-attributes';
 import clonedeep from 'lodash.clonedeep'
 import hljs from 'highlight.js/lib/core';
 import { tab } from "@mdit/plugin-tab";
+import { alert } from "@mdit/plugin-alert";
+import renderAlert from './render-alert';
+import renderTab, { tabsName } from './render-tab';
+// languages
+import javascript from 'highlight.js/lib/languages/javascript';
+import bash from 'highlight.js/lib/languages/bash';
+import json from 'highlight.js/lib/languages/json';
+import nginx from 'highlight.js/lib/languages/nginx';
+import xml from 'highlight.js/lib/languages/xml';
+import css from 'highlight.js/lib/languages/css';
+import plaintext from 'highlight.js/lib/languages/plaintext';
+import less from 'highlight.js/lib/languages/less';
+import typescript from 'highlight.js/lib/languages/typescript';
+
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('nginx', nginx);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('xml', xml);
+hljs.registerLanguage('css', css);
+hljs.registerLanguage('plaintext', plaintext);
+hljs.registerLanguage('less', less);
+hljs.registerLanguage('typescript', typescript);
 
 // 轻量级 slugify 函数，替代 uslug
 function slugify(str: string): string {
@@ -16,79 +39,6 @@ function slugify(str: string): string {
     .replace(/^-|-$/g, '')
     .replace(/-+/g, '-');
 }
-import { alert } from "@mdit/plugin-alert";
-import renderAlert from './render-alert';
-import renderTab, { tabsName } from './render-tab';
-
-// 默认支持的语言列表 - 使用动态导入
-const defaultLanguages: Record<string, () => Promise<any>> = {
-  javascript: () => import('highlight.js/lib/languages/javascript'),
-  bash: () => import('highlight.js/lib/languages/bash'),
-  json: () => import('highlight.js/lib/languages/json'),
-  nginx: () => import('highlight.js/lib/languages/nginx'),
-  xml: () => import('highlight.js/lib/languages/xml'),
-  css: () => import('highlight.js/lib/languages/css'),
-  plaintext: () => import('highlight.js/lib/languages/plaintext'),
-  less: () => import('highlight.js/lib/languages/less'),
-  typescript: () => import('highlight.js/lib/languages/typescript'),
-};
-
-// 已加载语言缓存
-const loadedLanguages = new Set<string>();
-
-// 注册默认语言（异步预加载）
-Object.entries(defaultLanguages).forEach(([lang, loader]) => {
-  const registerLang = async () => {
-    const module = await loader();
-    hljs.registerLanguage(lang, module.default || module);
-    loadedLanguages.add(lang);
-  };
-  registerLang();
-});
-
-/**
- * 动态加载并注册高亮语言
- * @param lang 语言名称
- */
-export async function registerLanguage(lang: string): Promise<void> {
-  if (!lang || loadedLanguages.has(lang) || hljs.getLanguage(lang)) return;
-
-  const loader = defaultLanguages[lang];
-  if (loader) {
-    try {
-      const module = await loader();
-      hljs.registerLanguage(lang, module.default || module);
-      loadedLanguages.add(lang);
-    } catch (e) {
-      console.warn(`加载高亮语言失败: ${lang}`, e);
-    }
-  }
-}
-
-/**
- * 从逗号分隔的字符串注册多个语言
- * @param codeType 逗号分隔的语言名称，例如 "python,java,go"
- */
-export async function registerLanguages(codeType?: string): Promise<void> {
-  if (!codeType) return;
-
-  const langs = codeType.split(',').map(l => l.trim().toLowerCase()).filter(Boolean);
-  await Promise.all(langs.map(lang => registerLanguage(lang)));
-}
-
-/**
- * 从 Markdown 内容中提取唯一的语言名称（从 ```lang 代码块）
- */
-export function extractLanguagesFromMarkdown(content: string): string[] {
-  const regex = /```(\w+)/g;
-  const langs: string[] = [];
-  let match;
-  while ((match = regex.exec(content)) !== null) {
-    langs.push(match[1].toLowerCase());
-  }
-  return [...new Set(langs)];
-}
-
 
 type AnchorItem = {
   title: string;
@@ -99,7 +49,7 @@ type AnchorItem = {
 
 function renderMarkdown(content: string) {
   let anchor: Array<AnchorItem & { children: Array<AnchorItem> }> = [];
-  const uslugify = (s: string) => slugify(s);
+  const uslugify = (s: any) => slugify(s);
   const MD = new markdownIt({
     langPrefix: 'language-',
     html: true,

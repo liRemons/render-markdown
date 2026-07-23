@@ -6,7 +6,7 @@ import CustomBackTop from '@/components/CustomBackTop';
 import Empty from '@/components/Empty';
 import { copy } from 'methods-r';
 import dayjs from 'dayjs';
-import renderMarkdown, { registerLanguages } from './utils/render-markdown';
+import renderMarkdown from './utils/render-markdown';
 import './markdown.global.less';
 import './index.global.less';
 
@@ -91,8 +91,6 @@ export default function RenderMarkdown(props: Props) {
     // 异步初始化
     const init = async () => {
       // 注册默认支持的语言列表
-      await registerLanguages('javascript,typescript,python,java,go,rust,c,cpp,csharp,php,ruby,swift,kotlin,sql,html,css,less,scss,json,xml,yaml,toml,bash,shell,dockerfile,markdown,mermaid');
-      
       if (!codeType || codeType?.toLocaleLowerCase() === 'md') {
         setHtml(renderMarkdown(content)?.info);
       } else {

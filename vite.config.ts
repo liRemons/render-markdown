@@ -1,66 +1,54 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import dts from 'vite-plugin-dts'
-import path from 'path'
-import * as esbuild from 'esbuild'
+import path from 'path';
+import commonjs from 'vite-plugin-commonjs';
+
 
 export default defineConfig({
   plugins: [
+    // ⚠️ 1. commonjs 必须放在 react 等插件的前面
+    commonjs({
+      // ⚠️ 2. 显式包含 node_modules 中的第三方包
+      filter(id) {
+        if (id.includes('node_modules')) {
+          return true
+        }
+        return undefined // 返回 undefined 使用默认行为
+      }
+    }),
     react(),
     dts({
-      insertTypesEntry: true
+      insertTypesEntry: true,
+      outDir: 'dist',
     }),
-    {
-      name: 'generate-minified',
-      async closeBundle() {
-        console.log('Generating minified files...')
-        const fs = await import('fs')
-        const distPath = path.resolve(__dirname, 'dist')
-        
-        try {
-          // 压缩 JS
-          const jsPath = path.join(distPath, 'index.js')
-          if (fs.existsSync(jsPath)) {
-            const code = fs.readFileSync(jsPath, 'utf-8')
-            const result = await esbuild.transform(code, { minify: true })
-            fs.writeFileSync(path.join(distPath, 'index.min.js'), result.code)
-            console.log('Generated index.min.js')
-          }
-          
-          // 压缩 CSS
-          const cssPath = path.join(distPath, 'index.css')
-          if (fs.existsSync(cssPath)) {
-            const code = fs.readFileSync(cssPath, 'utf-8')
-            const result = await esbuild.transform(code, { minify: true, loader: 'css' })
-            fs.writeFileSync(path.join(distPath, 'index.min.css'), result.code)
-            console.log('Generated index.min.css')
-          }
-        } catch (error) {
-          console.error('Failed to generate minified files:', error)
-        }
-      }
-    }
   ],
   build: {
+    // 库模式配置
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
+      name: 'MyComponentLibrary',
       formats: ['es'],
-      fileName: () => 'index.js'
+      fileName: () => `index.mjs`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', '@ant-design/icons'],
+      external: ['react', 'react-dom', 'antd', '@ant-design/icons', 'highlight.js', /^highlight\.js\/.*/, 'react/jsx-runtime'],
       output: {
+        format: 'es',
+        esModule: true,
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
-          '@ant-design/icons': 'Icons'
+          antd: 'antd',
+          '@ant-design/icons': 'Icons',
+          'highlight.js': 'hljs',
+          'react/jsx-runtime': 'jsxRuntime'
         },
-        format: 'es',
-        entryFileNames: 'index.js',
-        assetFileNames: 'index.css'
-      }
+        assetFileNames: 'index.css',
+      },
     },
-    minify: false
+    minify: true,
+    sourcemap: true,
   },
   resolve: {
     alias: {
