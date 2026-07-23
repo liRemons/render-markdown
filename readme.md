@@ -41,9 +41,11 @@ import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter } fro
 ```
 
 #### 默认导出
+
 - **RenderMarkdown**: React 组件，用于渲染 Markdown 内容
 
 #### 命名导出
+
 - **markdownFormat**: Markdown 解析函数，返回 `{ anchor: AnchorItem[], info: string }`
 - **languagesCommon**: 默认支持的语言包配置（javascript, typescript, css, json, bash, xml, plaintext）
 - **initHighlighter**: 初始化高亮语言包的函数
@@ -64,9 +66,11 @@ import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter } fro
 解析 Markdown 内容并返回结构化数据。
 
 **参数：**
+
 - `content: string` - Markdown 文本内容
 
 **返回值：**
+
 ```typescript
 {
   anchor: Array<{
@@ -85,9 +89,11 @@ import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter } fro
 注册自定义的代码高亮语言。
 
 **参数：**
+
 - `languages: Record<string, any>` - 语言包对象，格式为 `{ languageName: languageModule }`
 
 **示例：**
+
 ```typescript
 import javascript from 'highlight.js/lib/languages/javascript';
 import python from 'highlight.js/lib/languages/python';
@@ -103,7 +109,7 @@ initHighlighter({
 ### 基础用法
 
 ```tsx
-import RenderMarkdown from 'render-markdown';
+import RenderMarkdown from 'remons-render-markdown';
 import 'render-markdown/dist/index.css';
 
 function App() {
@@ -124,7 +130,7 @@ console.log('Hello');
 ### 完整示例
 
 ```tsx
-import RenderMarkdown from 'render-markdown';
+import RenderMarkdown from 'remons-render-markdown';
 import 'render-markdown/dist/index.css';
 
 function ArticlePage() {
@@ -164,7 +170,7 @@ graph TD
 ### 使用 markdownFormat 获取目录结构
 
 ```tsx
-import { markdownFormat } from 'render-markdown';
+import { markdownFormat } from 'remons-render-markdown';
 
 function TableOfContents() {
   const content = '# 标题1\n## 标题1.1\n## 标题1.2\n# 标题2';
@@ -183,7 +189,7 @@ function TableOfContents() {
 ### 自定义代码高亮语言
 
 ```tsx
-import RenderMarkdown, { initHighlighter, languagesCommon } from 'render-markdown';
+import RenderMarkdown, { initHighlighter, languagesCommon } from 'remons-render-markdown';
 import 'render-markdown/dist/index.css';
 import python from 'highlight.js/lib/languages/python';
 import go from 'highlight.js/lib/languages/go';
@@ -220,7 +226,7 @@ func main() {
 ### 仅渲染特定代码类型
 
 ```tsx
-import RenderMarkdown from 'render-markdown';
+import RenderMarkdown from 'remons-render-markdown';
 import 'render-markdown/dist/index.css';
 
 function CodeViewer() {
@@ -241,11 +247,23 @@ console.log(x + y);
 ```
 
 ### 关于语法
+
+#### mermaid 图表
+
+```code
+---
+title: 图表标题
+---
+......... 图表内容
+```
+
 #### Tabs 标签页
+
 依赖于 `@mdit/plugin-tab` 插件，参考 [mdit-plugin-tab](https://mdit-plugins.github.io/zh/tab.html) 的文档。
 *暂不支持 tabs 嵌套*
 
 语法示例：
+
 ```markdown
 :::markdown-tabs
 
@@ -262,9 +280,11 @@ console.log(x + y);
 ```
 
 #### Alert 提示框
+
 依赖于 `@mdit/plugin-alert` 插件，参考 [mdit-plugin-alert](https://mdit-plugins.github.io/zh/alert.html) 的文档。
 
 语法示例：
+
 ```markdown
 > [!warning]
 > 我是一个警告信息
@@ -279,3 +299,7 @@ console.log(x + y);
 3. **代码高亮**：请使用 `initHighlighter` 注册（必须）
 4. **安全性**：外部链接会自动添加 `target="_blank"` 和 `rel="noopener"` 属性
 5. **性能优化**：Mermaid 渲染会延迟执行，以优化首屏加载速度
+
+```
+
+```
