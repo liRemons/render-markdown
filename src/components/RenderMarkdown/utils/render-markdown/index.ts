@@ -8,26 +8,6 @@ import { tab } from "@mdit/plugin-tab";
 import { alert } from "@mdit/plugin-alert";
 import renderAlert from './render-alert';
 import renderTab, { tabsName } from './render-tab';
-// languages
-import javascript from 'highlight.js/lib/languages/javascript';
-import bash from 'highlight.js/lib/languages/bash';
-import json from 'highlight.js/lib/languages/json';
-import nginx from 'highlight.js/lib/languages/nginx';
-import xml from 'highlight.js/lib/languages/xml';
-import css from 'highlight.js/lib/languages/css';
-import plaintext from 'highlight.js/lib/languages/plaintext';
-import less from 'highlight.js/lib/languages/less';
-import typescript from 'highlight.js/lib/languages/typescript';
-
-hljs.registerLanguage('javascript', javascript);
-hljs.registerLanguage('bash', bash);
-hljs.registerLanguage('nginx', nginx);
-hljs.registerLanguage('json', json);
-hljs.registerLanguage('xml', xml);
-hljs.registerLanguage('css', css);
-hljs.registerLanguage('plaintext', plaintext);
-hljs.registerLanguage('less', less);
-hljs.registerLanguage('typescript', typescript);
 
 // 轻量级 slugify 函数，替代 uslug
 function slugify(str: string): string {
@@ -121,6 +101,25 @@ function renderMarkdown(content: string) {
     anchor: format(clonedeep(anchor)),
     info,
   }
+}
+
+
+/**
+ * 初始化高亮语言包
+ * @param {Object} languages - 语言包对象，如 { javascript: javascriptModule, css: cssModule }
+ */
+export function initHighlighter(languages: Record<string, any> | null | undefined) {
+  if (!languages || typeof languages !== 'object') {
+    console.warn('[YourComponent] initHighlighter 需要传入一个语言包对象');
+    return;
+  }
+
+  Object.entries(languages).forEach(([name, lang]) => {
+    // 防止重复注册
+    if (!hljs.getLanguage(name)) {
+      hljs.registerLanguage(name, lang);
+    }
+  });
 }
 
 export default renderMarkdown;

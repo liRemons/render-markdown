@@ -12,12 +12,33 @@ import './index.global.less';
 
 
 interface Props {
+  /**
+   * Markdown 内容
+   */
   content: string;
+  /**
+  * 创建时间
+  */
   createTime?: string;
+  /**
+  * 是否显示返回顶部
+  */
   showBackTop?: boolean;
+  /**
+  * 是否使用 Mermaid 插件
+  */
   isSlotMermaid?: boolean;
+  /**
+  * 是否显示代码折叠
+  */
   isShowCollapsed?: boolean;
+  /**
+  * 代码类型
+  */
   codeType?: string;
+  /**
+  * 显示编辑按钮
+  */
   editButton?: React.ReactNode;
 }
 
@@ -50,8 +71,6 @@ const initCodeClassName = (props: Props) => {
       const dom = document.querySelector(`.${copyId}`);
       if (dom) {
         copy(dom);
-        console.log('=======');
-        
         customMessage.success('复制成功');
       }
     }}><CopyFilled /></span>
