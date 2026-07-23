@@ -1,0 +1,181 @@
+/* =========================================
+1. 基础样式
+========================================= */
+@prefix: 'markdown-tabs';
+
+/* 整个 Tab 组的容器 */
+.markdown-tabs-tabs-wrapper {
+  border-radius: 4px;
+  margin-top: 2px;
+  mask-image: linear-gradient(to right, black 0%, black 100%);
+  position: relative;
+
+  /* 伪元素：作为遮罩层覆盖在内容上方 */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    pointer-events: none;
+    /* 关键：确保遮罩层不拦截鼠标/触摸事件 */
+    z-index: 10;
+    opacity: 0;
+    /* 默认隐藏 */
+    transition: opacity 0.4s ease;
+    /* 可选：平滑过渡 */
+  }
+
+  /* 状态类：左侧有蒙层 */
+  &.has-left-mask::after {
+    opacity: 1;
+    background: linear-gradient(to right, rgba(255, 255, 255, .6) 0%, rgba(255, 255, 255, 0) 15%);
+  }
+
+  /* 状态类：右侧有蒙层 */
+  &.has-right-mask::after {
+    opacity: 1;
+    background: linear-gradient(to left, rgba(255, 255, 255, .6) 0%, rgba(255, 255, 255, 0) 10%);
+  }
+
+  /* 状态类：左右都有蒙层 */
+  &.has-both-masks::after {
+    opacity: 1;
+    background: linear-gradient(to right, rgba(255, 255, 255, .6) 0%, rgba(255, 255, 255, 0) 15%, rgba(255, 255, 255, 0) 85%, rgba(255, 255, 255, .6) 100%);
+  }
+
+  /* 头部导航栏 */
+  .markdown-tabs-tabs-header {
+    position: sticky;
+    display: flex;
+    overflow-y: hidden;
+    overflow-x: auto;
+    top: 0;
+    background: var(--color-bg);
+    z-index: 2;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /* 单个导航按钮 */
+  .markdown-tabs-tab-button {
+    box-shadow: none !important;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    background: transparent;
+    transition: background 0.4s;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 0 !important;
+    font-weight: normal;
+    position: relative;
+    margin: 0 2px;
+    min-width: 50px;
+    border: 1px solid #ccc !important;
+    border-bottom: 0 !important;
+    background: #ebecf0;
+
+    &:last-child {
+      border-right: none;
+      margin-right: 0;
+    }
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    &:hover {
+      background: #e4e4f5;
+      box-shadow: none !important;
+      color: #007bff;
+    }
+
+    // &::after {
+    //   content: ' ';
+    //   z-index: 1;
+    //   width: 8px;
+    //   height: 8px;
+    //   position: absolute;
+    //   bottom: -1px;
+    //   left: 100%;
+    // }
+
+    // &::before {
+    //   content: " ";
+    //   z-index: 1;
+    //   width: 8px;
+    //   height: 8px;
+    //   position: absolute;
+    //   bottom: -1px;
+    //   right: 100%;
+    // }
+
+    &.active {
+      color: #007bff;
+      position: relative;
+      background: #dbdbff;
+
+      // &::after {
+      //   background: radial-gradient(16px at right top, transparent 50%, #ebecf0 50%);
+      // }
+
+      // &::before {
+      //   background: radial-gradient(16px at left top, transparent 50%, #ebecf0 50%);
+      // }
+    }
+  }
+
+  /* 内容区域 */
+  .markdown-tabs-tabs-container {
+    position: relative;
+  }
+
+  .markdown-tabs-tab-content {
+    display: none;
+    overflow: hidden;
+    padding: 2px 10px 0 10px;
+    border-radius: 0 8px 8px 8px;
+    border: 1px solid #ccc;
+    height: auto;
+
+    &.active {
+      display: block;
+    }
+  }
+}
+
+[data-theme='dark'] {
+  .markdown-tabs-tabs-header {
+    border-color: #1a1d2e;
+  }
+
+  .markdown-tabs-tab-button {
+    border-color: #1a1d2e !important;
+    color: #afafaf;
+    background: #263238;
+
+    &:hover {
+      background: #2e3350;
+    }
+
+    &.active {
+      background: #2e3350;
+      border: 1px solid #2e3350 !important;
+
+      &::after {
+        background: radial-gradient(16px at right top, transparent 50%, #2e3350 50%);
+      }
+
+      &::before {
+        background: radial-gradient(16px at left top, transparent 50%, #2e3350 50%);
+      }
+    }
+  }
+
+  .markdown-tabs-tab-content {
+    border-color: #2e3350  !important;
+  }
+}

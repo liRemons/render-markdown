@@ -1,0 +1,51 @@
+/**
+ * Tooltip 组件样式
+ */
+
+.tooltip {
+  display: inline-block;
+}
+
+.tooltip-trigger {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.tooltip-inner {
+  position: fixed;
+  transform: translate(-50%, -100%) translateY(0px);
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 1070;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  margin-left: -5px;
+}
+
+.tooltip-inner-visible {
+  opacity: 1;
+}
+
+.tooltip-content {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.75);
+}

@@ -1,0 +1,132 @@
+﻿@import './variables.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+/* Less 变量 */
+@ruler: 16px;
+
+/* ===== 深色模式全局覆盖 ===== */
+[data-theme='dark'] {
+
+  /* inline code 样式（docList markdown）*/
+  code {
+    background: #3d4258 !important;
+    color: #f0a0a0 !important;
+
+    pre & {
+      background: none !important;
+      color: inherit !important;
+    }
+  }
+
+  /* 代码块 header 背景 */
+  pre .pre-handle {
+    color: #c9d1d9 !important;
+    background: #2e3350 !important;
+  }
+
+  /* 代码块背景 */
+  pre {
+    box-shadow: inset 5px 5px 10px #0a0b12, inset -5px -5px 10px #2a2e42 !important;
+  }
+
+  /* mermaid 容器背景 */
+  .mermaid-wrapper,
+  .mermaid-loading,
+  .mermaid-fullscreen-target {
+    background-color: #2e3350 !important;
+  }
+
+  /* mermaid 全屏背景 */
+  .mermaid-fullscreen-target:fullscreen {
+    background: #1a1d2e !important;
+  }
+
+  /* 通用滚动条 */
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35) !important;
+  }
+}
+
+/* ===== 全局基础样式 ===== */
+* {
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+body,
+html {
+  font-family: var(--font-family-base);
+  background: var(--color-bg) !important;
+}
+
+body {
+  margin: 0;
+}
+
+.circle {
+  margin: 0;
+  top: 40px;
+  left: 40px;
+  width: 40px;
+  line-height: 40px;
+  height: 40px;
+  border-radius: 100% !important;
+  background-color: var(--color-bg);
+  padding: 0;
+  text-align: center;
+  margin-right: 5px;
+  display: inline-block;
+  box-shadow: var(--shadow-sm) !important;
+  transition: shadow 0.2s ease-in-out;
+
+  &:hover {
+    box-shadow: -2px -2px 5px var(--color-shadow-light),
+      2px 2px 5px var(--color-shadow) !important;
+  }
+
+  &:active {
+    box-shadow: var(--shadow-inset) !important;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .shadow_not_active {
+    box-shadow: -2px -2px 10px var(--color-shadow-light),
+      2px 2px 10px var(--color-shadow) !important;
+  }
+
+  .shadow,
+  .circle {
+    box-shadow: -2px -2px 10px var(--color-shadow-light),
+      2px 2px 10px var(--color-shadow) !important;
+  }
+}
+
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: rgba(126, 126, 126, 0.322);
+  transition: all 0.5s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #757575c2;
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+}

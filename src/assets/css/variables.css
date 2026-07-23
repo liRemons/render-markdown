@@ -1,0 +1,106 @@
+﻿/* ===== CSS 自定义属性（主题变量） ===== */
+/* 浅色主题（默认） */
+:root,
+[data-theme="light"] {
+  /* ── 基础颜色 ── */
+  --color-bg: #ebecf0;
+  --color-bg-card: #ebecf0;
+  --color-bg-white: #ffffff;
+  --color-bg-overlay: rgba(255, 255, 255, 0.85);
+  --color-bg-tooltip: #61616141;
+
+  /* ── 文字颜色 ── */
+  --color-text: #61677c;
+  --color-text-primary: #202124;
+  --color-text-secondary: #595959;
+  --color-text-muted: #9ba3b5;
+  --color-text-heading: #1d1d1d;
+  --color-text-light: #6b7280;
+  --color-text-placeholder: #999;
+
+  /* ── 阴影 ── */
+  --color-shadow: #babecc;
+  --color-shadow-light: #ffffff;
+  --shadow-sm: -5px -5px 10px var(--color-shadow-light), 5px 5px 10px var(--color-shadow);
+  --shadow-md: -5px -5px 20px var(--color-shadow-light), 5px 5px 20px var(--color-shadow);
+  --shadow-lg: -5px -5px 14px var(--color-shadow-light), 5px 5px 14px var(--color-shadow);
+  --shadow-inset: inset 1px 1px 2px var(--color-shadow), inset -1px -1px 2px var(--color-shadow-light);
+  --shadow-inset-deep: inset 2px 2px 5px var(--color-shadow), inset -5px -5px 10px var(--color-shadow-light);
+  --shadow-pressed: inset 1px 1px 2px var(--color-shadow), inset -1px -1px 2px var(--color-shadow-light);
+
+  /* ── 功能色 ── */
+  --color-active: #75bcff;
+  --color-red: #ae1100;
+  --color-primary: #1677ff;
+  --color-danger: #ef4444;
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+
+  /* ── 边框 ── */
+  --color-border: #dbdada;
+  --color-border-light: #f0f0f0;
+  --color-border-dark: #d0d7de;
+
+  /* ── 间距 ── */
+  --ruler: 16px;
+
+  /* ── 字体 ── */
+  --font-family-base: Inter, Noto Sans SC, -apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif;
+  --font-family-mono: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  --font-family-editor: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* ── 圆角 ── */
+  --radius-sm: 3px;
+  --radius-base: 8px;
+  --radius-lg: 10px;
+  --radius-round: 50%;
+}
+
+/* ===== 深色主题 ===== */
+[data-theme="dark"] {
+  --color-bg: #1a1d2e;
+  --color-bg-card: #1e2235;
+  --color-bg-white: #2e3350;
+  --color-bg-overlay: rgba(30, 34, 53, 0.9);
+  --color-bg-tooltip: #2e3350;
+
+  --color-text: #b0b8c8;
+  --color-text-primary: #e8ecf4;
+  --color-text-secondary: #8892a4;
+  --color-text-muted: #6b7280;
+  --color-text-heading: #e8ecf4;
+  --color-text-light: #8892a4;
+  --color-text-placeholder: #6b7280;
+
+  --color-shadow: #12141f;
+  --color-shadow-light: #28304a;
+  --shadow-sm: -5px -5px 10px var(--color-shadow-light), 5px 5px 10px var(--color-shadow);
+  --shadow-md: -5px -5px 20px var(--color-shadow-light), 5px 5px 20px var(--color-shadow);
+  --shadow-lg: -5px -5px 14px var(--color-shadow-light), 5px 5px 14px var(--color-shadow);
+  --shadow-inset: inset 1px 1px 2px var(--color-shadow), inset -1px -1px 2px var(--color-shadow-light);
+  --shadow-inset-deep: inset 2px 2px 5px var(--color-shadow), inset -5px -5px 10px var(--color-shadow-light);
+  --shadow-pressed: inset 1px 1px 2px var(--color-shadow), inset -1px -1px 2px var(--color-shadow-light);
+
+  --color-active: #4f9eff;
+  --color-red: #ef4444;
+  --color-primary: #4f9eff;
+  --color-danger: #ef4444;
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+
+  --color-border: #2e3350;
+  --color-border-light: #1e2235;
+  --color-border-dark: #3d4258;
+
+  --ruler: 16px;
+
+  --font-family-base: Inter, Noto Sans SC, -apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif,
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-family-mono: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  --font-family-editor: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+
+  --radius-sm: 3px;
+  --radius-base: 8px;
+  --radius-lg: 10px;
+  --radius-round: 50%;
+}

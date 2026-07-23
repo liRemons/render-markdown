@@ -1,0 +1,232 @@
+﻿@import (reference) "../../assets/css/variables.css";
+
+/* 预览区域 */
+.previewArea {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  background: var(--color-bg-card, #f8f9fa);
+  cursor: grab;
+  border-radius: var(--radius-base);
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    cursor: grab;
+  }
+}
+
+:global(.mermaid-mini) {
+  .previewArea {
+    visibility: hidden;
+  }
+}
+
+.previewContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-origin: center center;
+  touch-action: none;
+
+  :global(svg) {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    font-family: var(--font-family-base) !important;
+  }
+}
+
+/* 错误提示 */
+.errorTip {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--color-danger, #ef4444);
+  background: #fef2f2;
+  border-bottom: 1px solid #fee2e2;
+  flex-shrink: 0;
+  word-break: break-all;
+  max-height: 120px;
+  overflow: auto;
+}
+
+/* 空状态 / 加载中 */
+.emptyTip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-light, #9ca3af);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+
+
+:global {
+  .mermaid-react-root {
+    min-height: 36px;
+    margin: 10px 0;
+  }
+
+  .mermaid-wrapper,
+  .mermaid-loading {
+    overflow: hidden;
+    background-color: var(--color-bg-card, #f8f9fa);
+    border-radius: 8px;
+    position: relative;
+    border: 1px solid var(--color-border, #e4e4e4);
+    box-sizing: border-box;
+    transition: all 0.3s ease-in-out;
+
+    &.mermaid-mini {
+      max-height: 36px;
+    }
+
+    .mermaid-content.disabled-move {
+      cursor: initial !important;
+    }
+
+    &.mermaid-collapsed {
+      max-height: 200px;
+
+      &::after {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 28px;
+        pointer-events: none;
+        content: "";
+        background: linear-gradient(to bottom, transparent, var(--color-bg, #ebebeb));
+      }
+    }
+  }
+
+  .mermaid-loading {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mermaid-wrapper svg {
+    display: block;
+  }
+
+  .mermaid-title {
+    position: absolute;
+    line-height: 34px;
+    left: 6px;
+    display: flex;
+    align-items: center;
+
+    .mermaid-title-tag {
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #fdf1f6;
+      color: #fc366e;
+      margin-right: 4px;
+    }
+
+    .mermaid-title-text {
+      font-size: 12px;
+      border: 1px #fc366e solid;
+      box-sizing: border-box;
+      border-left: 0;
+      border-radius: 0 4px 4px 0;
+      padding-right: 4px;
+      padding-left: 5px;
+      display: inline-block;
+      height: 20px;
+      line-height: 18px;
+      margin-left: -1px;
+    }
+
+    img {
+      width: auto;
+      height: 20px;
+      margin: 0;
+      display: inline-block;
+    }
+  }
+
+  .mermaid-toolbar,
+  .mermaid-toolbar-loading {
+    gap: 4px;
+    z-index: 1;
+    right: 0;
+    position: absolute;
+    opacity: 0.8;
+    top: 4px;
+
+    .circle {
+      height: 24px;
+      width: 24px;
+      line-height: 24px;
+      font-size: 12px;
+    }
+  }
+
+  .mermaid-toolbar-loading {
+    margin-right: 10px;
+  }
+
+  .mermaid-fullscreen-target:fullscreen {
+    background: var(--color-bg-white, #fff);
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+
+    .mermaid-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .mermaid-toolbar {
+      top: 4px;
+      right: 8px;
+    }
+  }
+
+  .mermaid-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .driver-popover {
+    button {
+      box-shadow: none !important;
+    }
+  }
+
+  .mermaid-code-modal {
+    .ant-modal-header {
+      margin: 0;
+    }
+
+    .ant-modal-content {
+      padding: 20px 10px;
+
+      .markdown {
+        padding: 0;
+      }
+    }
+  }
+}
