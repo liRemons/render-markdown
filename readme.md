@@ -2,6 +2,9 @@
 
 一个基于 React 的 Markdown 渲染组件，支持 GFM（GitHub Flavored Markdown）Tabs 标签、代码高亮、Mermaid 图表等功能。
 
+渲染效果
+![整体渲染效果](https://remons.cn:3008/upload/md_assets/%E6%95%B4%E4%BD%93%E6%B8%B2%E6%9F%93%E6%95%88%E6%9E%9C.png)
+
 ## 技术方案
 
 ### 技术栈
@@ -257,6 +260,11 @@ title: 图表标题
 ......... 图表内容
 ```
 
+- 折叠图
+![mermaid 渲染图](https://remons.cn:3008/upload/md_assets/mermaid%20%E7%BC%A9%E7%95%A5%E5%9B%BE.png)
+
+- 缩略图
+![mermaid 渲染图](https://remons.cn:3008/upload/md_assets/mermaid%20%E5%B1%95%E5%BC%80%E5%9B%BE.png)
 #### Tabs 标签页
 
 依赖于 `@mdit/plugin-tab` 插件，参考 [mdit-plugin-tab](https://mdit-plugins.github.io/zh/tab.html) 的文档。
@@ -278,6 +286,7 @@ title: 图表标题
     ```
 :::
 ```
+![tabs 渲染图](https://remons.cn:3008/upload/md_assets/tabs.png)
 
 #### Alert 提示框
 
@@ -290,6 +299,8 @@ title: 图表标题
 > 我是一个警告信息
 ```
 
+![alert 渲染图](https://remons.cn:3008/upload/md_assets/alert.png)
+
 #### 目录锚点
 
 ## 注意事项
@@ -300,6 +311,3 @@ title: 图表标题
 4. **安全性**：外部链接会自动添加 `target="_blank"` 和 `rel="noopener"` 属性
 5. **性能优化**：Mermaid 渲染会延迟执行，以优化首屏加载速度
 
-```
-
-```
