@@ -40,6 +40,15 @@ interface Props {
   * 显示编辑按钮
   */
   editButton?: React.ReactNode;
+  /**
+   * 返回顶部所依赖的容器
+   * HTMLElement
+   */
+  backTopTarget?: HTMLElement;
+  /**
+  * 是否显示新手引导
+  */
+  showDriverGuide?: boolean;
 }
 
 
@@ -63,7 +72,7 @@ const initCodeClassName = (props: Props) => {
     }
     preNode?.insertBefore(handleDOM, preNode.querySelector('code'));
     const codeTypeDOM = <>
-      <img src="https://remons.cn/@website_pages/static/assets/images/code_icon..png" alt="" />
+      <img src="https://remons.cn:3008/upload/md_assets/code_icon.png" alt="" />
       <span>{codeType}</span>
     </>
 
@@ -102,7 +111,7 @@ const initCodeClassName = (props: Props) => {
 };
 
 export default function RenderMarkdown(props: Props) {
-  const { content, createTime, showBackTop, isSlotMermaid = true, codeType, editButton } = props;
+  const { content, createTime, showBackTop, isSlotMermaid = true, codeType, editButton, backTopTarget = document.body, showDriverGuide } = props;
   const [html, setHtml] = useState('');
   useEffect(() => {
     let timer = null;
@@ -122,7 +131,7 @@ export default function RenderMarkdown(props: Props) {
         if (isSlotMermaid) {
           // DOM 更新完毕 1s 后渲染 Mermaid, 牺牲 cls 换取首屏加载速度
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
-          await renderMermaid();
+          await renderMermaid({ showDriverGuide });
         }
       }, 10);
     };
@@ -155,7 +164,7 @@ export default function RenderMarkdown(props: Props) {
           </div>
           : <Empty />
       }
-      {showBackTop && <CustomBackTop target={() => document.getElementsByClassName('markdown')?.[0] as HTMLElement} />}
+      {showBackTop && <CustomBackTop target={() => backTopTarget} />}
     </div>
   )
 }

@@ -63,6 +63,7 @@ import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter } fro
 | isShowCollapsed | boolean | ❌ | true | 是否显示代码折叠按钮 |
 | codeType | string | ❌ | - | 指定代码类型（如 'javascript' 等），不传则按 Markdown 渲染 |
 | editButton | React.ReactNode | ❌ | - | 自定义编辑按钮 |
+| backTopTarget | HTMLElement | ❌ | body | 返回顶部按钮监听的容器 |
 
 ### markdownFormat 函数
 
@@ -301,7 +302,56 @@ title: 图表标题
 
 ![alert 渲染图](https://remons.cn:3008/upload/md_assets/alert.png)
 
-#### 目录锚点
+#### MermaidRenderer 组件
+
+独立的 Mermaid 图表渲染组件，支持缩放、全屏、下载、源码查看等功能。
+
+```tsx
+import { renderMermaid } from 'remons-render-markdown';
+import 'remons-render-markdown/dist/index.css';
+
+function MermaidComponent() {
+  const mermaidCode = `
+---
+title: 流程图示例
+---
+graph TD
+  A[开始] --> B[处理]
+  B --> C[结束]
+  `;
+
+  return (
+    <div>
+      {
+        renderMermaid({ source: mermaidCode })
+      }
+    </div>
+  );
+}
+```
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| source | string | ✅ | - | Mermaid 代码字符串，支持 `---title: xxx---` 格式设置标题 |
+| debounceMs | number | ❌ | 300 | 图表渲染时的 debounce 时间（毫秒） |
+| enablePanzoom | boolean | ❌ | true | 是否启用缩放和平移功能 |
+| showDownload | boolean | ❌ | true | 是否显示下载按钮（支持 SVG/PNG 格式） |
+| showSourceView | boolean | ❌ | false | 是否显示源码查看按钮和工具栏 |
+| showCollapse | boolean | ❌ | false | 是否显示折叠/展开按钮 |
+| defaultCollapsed | boolean | ❌ | true | 默认折叠状态 |
+| className | string | ❌ | "" | 自定义样式类名 |
+| minHeight | number | ❌ | 200 | 最小高度（像素） |
+| showDriverGuide | boolean | ❌ | false | 是否显示新手引导 |
+
+**功能特性：**
+- 缩放：支持放大、缩小、重置视图
+- 全屏：支持浏览器原生全屏模式
+- 下载：支持下载 SVG 和 PNG 格式
+- 源码查看：点击按钮可查看 Mermaid 源码
+- 折叠/展开：支持图表的折叠和展开
+- 缩略图模式：最小化时显示缩略图
+- 深色模式：自动适配主题
+
 
 ## 注意事项
 

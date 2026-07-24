@@ -49,15 +49,50 @@ interface ToolbarItem {
 }
 
 interface MermaidRendererProps {
+  /**
+   * 图表源码
+  */
   source: string;
+  /**
+  * 图表渲染时的 debounce 时间
+  */
   debounceMs?: number;
+  /**
+  * 是否启用 panzoom 功能
+  */
   enablePanzoom?: boolean;
+  /**
+  * 是否显示下载按钮
+  */
   showDownload?: boolean;
+  /**
+  * 是否显示源码查看按钮
+  */
   showSourceView?: boolean;
+  /**
+  * 是否显示折叠按钮
+   */
   showCollapse?: boolean;
+  /**
+  * 默认折叠状态
+  */
   defaultCollapsed?: boolean;
+  /**
+  * 自定义类名
+  */
   className?: string;
+  /**
+  * 最小高度
+  */
   minHeight?: number;
+  /**
+  * 是否显示新手引导
+  */
+  showDriverGuide?: boolean;
+}
+
+interface IProps {
+  showDriverGuide?: boolean;
 }
 
 // ==================== 统一 Mermaid 渲染组件 ====================
@@ -71,8 +106,8 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   defaultCollapsed = true,
   className = "",
   minHeight = 200,
+  showDriverGuide,
 }) {
-
   const titleMatch = source.match(/---\s*\n\s*title:\s*(.+)\s*\n\s*---/);
   const title = titleMatch ? titleMatch[1].trim() : 'mermaid 图表';
   const { isDark } = useTheme();
@@ -93,7 +128,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   });
 
   useEffect(() => {
-    driverRender([
+    showDriverGuide && driverRender([
       {
         id: menuDriverKey,
         condition: () => !localStorage[menuDriverKey] && showSourceView && !IsPC() && localStorage.docListMenuVisible !== 'true',
@@ -251,10 +286,10 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
             if (item.isShow === false) return null;
             const btn = item.dropdown ? (
               <CustomDropdown key={index} items={item.dropdown.items} onClick={item.dropdown.onClick}>
-                <div className={`circle ${item.className ? ` ${item.className}` : ''}`}>{item.icon}</div>
+                <div className={`remons-markdown-circle ${item.className ? ` ${item.className}` : ''}`}>{item.icon}</div>
               </CustomDropdown>
             ) : (
-              <div key={index} className={`circle ${item.className ? ` ${item.className}` : ''}`} onClick={item.onClick}>
+              <div key={index} className={`remons-markdown-circle ${item.className ? ` ${item.className}` : ''}`} onClick={item.onClick}>
                 {item.icon}
               </div>
             );
@@ -303,9 +338,10 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
 });
 
 // ==================== DOM 扫描入口（文档页使用） ====================
-async function renderMermaidWithControls() {
+async function renderMermaidWithControls(props: IProps) {
   const blocks = document.querySelectorAll("code.language-mermaid");
 
+  const { showDriverGuide } = props || {};
 
   for (const block of blocks) {
     const pre = block.parentElement;
@@ -329,6 +365,7 @@ async function renderMermaidWithControls() {
             showCollapse
             defaultCollapsed
             minHeight={200}
+            showDriverGuide={showDriverGuide}
           />
         </ThemeProvider>
       </React.StrictMode>
@@ -337,4 +374,13 @@ async function renderMermaidWithControls() {
 }
 
 export default MermaidRenderer;
-export { renderMermaidWithControls };
+
+const renderMermaid = (props: MermaidRendererProps) => {
+  return (
+    <ThemeProvider>
+      <MermaidRenderer {...props} />
+    </ThemeProvider>
+  )
+}
+
+export { renderMermaidWithControls, renderMermaid };

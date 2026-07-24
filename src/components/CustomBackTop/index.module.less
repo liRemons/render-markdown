@@ -31,3 +31,27 @@
     transform: scale(0.95);
   }
 }
+
+/* 深色模式 */
+[data-theme='dark'] .back-top {
+  background: #2e3350;
+  border: 1px solid #3d4258;
+  color: #e8ecf4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+
+  &:hover {
+    background: #3d4258;
+    border-color: #4f9eff;
+    color: #4f9eff;
+  }
+}
+
+
+@media screen and (max-width: 500px) {
+  .back-top {
+    right: 30px;
+    bottom: 40px;
+    width: 30px;
+    height: 30px;
+  }
+}
