@@ -333,7 +333,7 @@ graph TD
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
-| source | string | ✅ | - | Mermaid 代码字符串，支持 `---title: xxx---` 格式设置标题 |
+| source | string | ✅ | - | Mermaid 代码字符串，支持设置标题 |
 | debounceMs | number | ❌ | 300 | 图表渲染时的 debounce 时间（毫秒） |
 | enablePanzoom | boolean | ❌ | true | 是否启用缩放和平移功能 |
 | showDownload | boolean | ❌ | true | 是否显示下载按钮（支持 SVG/PNG 格式） |
