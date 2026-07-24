@@ -64,6 +64,7 @@ import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter } fro
 | codeType | string | ❌ | - | 指定代码类型（如 'javascript' 等），不传则按 Markdown 渲染 |
 | editButton | React.ReactNode | ❌ | - | 自定义编辑按钮 |
 | backTopTarget | HTMLElement | ❌ | body | 返回顶部按钮监听的容器 |
+| showDriverGuide | boolean | ❌ | false | 是否显示新手引导 |
 
 ### markdownFormat 函数
 
@@ -302,9 +303,9 @@ title: 图表标题
 
 ![alert 渲染图](https://remons.cn:3008/upload/md_assets/alert.png)
 
-#### MermaidRenderer 组件
+#### renderMermaid 方法
 
-独立的 Mermaid 图表渲染组件，支持缩放、全屏、下载、源码查看等功能。
+支持渲染独立的 Mermaid 图表渲染组件，支持缩放、全屏、下载、源码查看等功能。
 
 ```tsx
 import { renderMermaid } from 'remons-render-markdown';
@@ -341,7 +342,6 @@ graph TD
 | defaultCollapsed | boolean | ❌ | true | 默认折叠状态 |
 | className | string | ❌ | "" | 自定义样式类名 |
 | minHeight | number | ❌ | 200 | 最小高度（像素） |
-| showDriverGuide | boolean | ❌ | false | 是否显示新手引导 |
 
 **功能特性：**
 - 缩放：支持放大、缩小、重置视图
