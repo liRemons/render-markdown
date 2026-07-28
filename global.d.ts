@@ -27,7 +27,6 @@ declare module 'markdown-it-link-attributes';
 declare module '@mdit/plugin-tab';
 declare module '@mdit/plugin-alert';
 declare module 'lodash.clonedeep';
-declare module 'dayjs';
 declare module 'methods-r';
 declare module 'highlight.js/lib/core';
 declare module 'highlight.js/lib/languages/javascript';

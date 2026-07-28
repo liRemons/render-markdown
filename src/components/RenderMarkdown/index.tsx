@@ -4,8 +4,7 @@ import { createRoot } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
 import CustomBackTop from '@/components/CustomBackTop';
 import Empty from '@/components/Empty';
-import { copy } from 'methods-r';
-import dayjs from 'dayjs';
+import { copy, dateFormat } from 'methods-r';
 import renderMarkdown from './utils/render-markdown';
 import './markdown.global.less';
 import './index.global.less';
@@ -153,7 +152,7 @@ export default function RenderMarkdown(props: Props) {
             <div className="markdown-footer">
               {
                 createTime && <div className="create-time">
-                  文档更新于 {dayjs(createTime).format('YYYY-MM-DD HH:mm:ss')}
+                  文档更新于 {dateFormat(createTime, 'yyyy/MM/dd HH:mm:ss')}
                 </div>
               }
               &nbsp;
