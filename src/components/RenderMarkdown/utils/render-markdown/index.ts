@@ -6,7 +6,10 @@ import clonedeep from 'lodash.clonedeep'
 import hljs from 'highlight.js/lib/core';
 import { tab } from "@mdit/plugin-tab";
 import { alert } from "@mdit/plugin-alert";
+import katex from '@vscode/markdown-it-katex';
 import renderAlert from './render-alert';
+
+import 'katex/dist/katex.min.css'
 import renderTab, { tabsName } from './render-tab';
 
 // 轻量级 slugify 函数，替代 uslug
@@ -71,6 +74,10 @@ function renderMarkdown(content: string) {
     })
     .use(alert, {
       titleRender: renderAlert
+    })
+    .use(katex, {
+      strict: false,      // 👈 必须加这个！允许中文
+      throwOnError: false // 👈 建议加上，防止报错导致整个页面崩溃
     });
   ;
 

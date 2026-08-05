@@ -89,10 +89,18 @@ interface MermaidRendererProps {
   * 是否显示新手引导
   */
   showDriverGuide?: boolean;
+  /**
+   * 是否为打印模式
+   */
+  isPrintPreview?: boolean;
 }
 
 interface IProps {
   showDriverGuide?: boolean;
+  /** 
+  * 是否为打印模式 
+  */
+  isPrintPreview?: boolean;
 }
 
 // ==================== 统一 Mermaid 渲染组件 ====================
@@ -107,6 +115,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   className = "",
   minHeight = 200,
   showDriverGuide,
+  isPrintPreview = false,
 }) {
   const titleMatch = source.match(/---\s*\n\s*title:\s*(.+)\s*\n\s*---/);
   const title = titleMatch ? titleMatch[1].trim() : 'mermaid 图表';
@@ -123,12 +132,13 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   const isPanzoomActive = enablePanzoom && (isFullscreen || !isCollapsed || !showCollapse);
   const panzoomRef = usePanzoom({
     contentRef, wrapperRef,
-    enabled: isPanzoomActive && !!svg,
-    svg, isFullscreen,
+    enabled: isPanzoomActive && !!svg && !isPrintPreview,
+    svg, 
+    isFullscreen,
   });
 
   useEffect(() => {
-    showDriverGuide && driverRender([
+    showDriverGuide && !isPrintPreview && driverRender([
       {
         id: menuDriverKey,
         condition: () => !localStorage[menuDriverKey] && showSourceView && !IsPC() && localStorage.docListMenuVisible !== 'true',
@@ -167,6 +177,12 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
     ])
   }, [svg])
 
+  useEffect(() => {
+    if (isPrintPreview && svg && !error && !loading) {
+      setIsCollapsed(false);
+    }
+  }, [isPrintPreview, svg, error, loading])
+
   // 监听原生全屏状态
   useEffect(() => {
     const handler = () => {
@@ -175,9 +191,11 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
         setIsCollapsed(true);
       }
     };
-    document.addEventListener("fullscreenchange", handler);
+    if (!isPrintPreview) {
+      document.addEventListener("fullscreenchange", handler);
+    }
     return () => document.removeEventListener("fullscreenchange", handler);
-  }, [showCollapse]);
+  }, [showCollapse, isPrintPreview]);
 
   const handleDownloadSVG = useCallback(() => {
     if (!svg) { customMessage.warning("暂无图表"); return; }
@@ -207,101 +225,105 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
           showCollapse ? "mermaid-wrapper" : "",
           isCollapsed && showCollapse && !isMinimize ? " mermaid-collapsed" : "",
           className,
-          isMinimize && isCollapsed && !isFullscreen ? 'mermaid-mini' : ''
+          isMinimize && isCollapsed && !isFullscreen ? 'mermaid-mini' : '',
+          isPrintPreview ? 'print-preview' : ''
         )
       }
       style={{ minHeight: isMinimize ? 0 : minHeight, position: "relative", height: '100%' }}
     >
-      {/* 工具栏 */}
       {
-        showSourceView && <div className="mermaid-title">
-          <span className="mermaid-title-tag">
-            <img src={mermaidSvg} alt="" />
-            <span className="mermaid-title-text">Mermaid</span>
-          </span>
-          {title}
-        </div>
+        !isPrintPreview && <>
+          {/* 工具栏 */}
+          {
+            showSourceView && <div className="mermaid-title">
+              <span className="mermaid-title-tag">
+                <img src={mermaidSvg} alt="" />
+                <span className="mermaid-title-text">Mermaid</span>
+              </span>
+              {title}
+            </div>
+          }
+          {!hasDiagram && <div className="mermaid-toolbar-loading"><LoadingOutlined /> </div>}
+          {hasDiagram && (
+            <div className="mermaid-toolbar">
+              {[
+                {
+                  isShow: showSourceView && isCollapsed && !isFullscreen,
+                  icon: isMinimize ? <ExportOutlined /> : <ImportOutlined />,
+                  tooltip: isMinimize ? '缩略图' : '最小化',
+                  onClick: () => setIsMinimize((prev: boolean) => !prev),
+                  className: 'mermaid-minimize-btn',
+                },
+                {
+                  isShow: isPanzoomActive,
+                  icon: <PlusOutlined />,
+                  tooltip: '放大',
+                  onClick: () => panzoomRef.current?.zoomIn(),
+                },
+                {
+                  isShow: isPanzoomActive,
+                  icon: <MinusOutlined />,
+                  tooltip: '缩小',
+                  onClick: () => panzoomRef.current?.zoomOut(),
+                },
+                {
+                  isShow: isPanzoomActive,
+                  icon: <ReloadOutlined />,
+                  tooltip: '重置',
+                  onClick: () => panzoomRef.current?.reset(),
+                },
+                {
+                  isShow: showDownload && isPanzoomActive,
+                  icon: <DownloadOutlined />,
+                  tooltip: '下载',
+                  dropdown: downloadMenu,
+                },
+                {
+                  isShow: true,
+                  icon: isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />,
+                  tooltip: isFullscreen ? '退出全屏' : '全屏',
+                  onClick: () => {
+                    panzoomRef.current?.reset()
+                    if (document.fullscreenElement) document.exitFullscreen();
+                    else wrapperRef.current?.requestFullscreen?.();
+                  },
+                  className: 'mermaid-fullscreen-btn',
+                },
+                {
+                  isShow: showSourceView && !isFullscreen,
+                  icon: <CodeOutlined />,
+                  tooltip: '查看源码',
+                  onClick: () => setShowSource(true),
+                  className: 'mermaid-showcode-btn',
+                },
+                {
+                  isShow: showCollapse && !isFullscreen,
+                  icon: isCollapsed ? <DownOutlined /> : <UpOutlined />,
+                  tooltip: isCollapsed ? '展开' : '收起',
+                  onClick: () => setIsCollapsed((prev: boolean) => !prev),
+                  className: 'mermaid-collapsed-btn',
+                },
+              ].filter(Boolean).map((item: ToolbarItem, index: number) => {
+                if (item.isShow === false) return null;
+                const btn = item.dropdown ? (
+                  <CustomDropdown key={index} items={item.dropdown.items} onClick={item.dropdown.onClick}>
+                    <div className={`remons-markdown-circle ${item.className ? ` ${item.className}` : ''}`}>{item.icon}</div>
+                  </CustomDropdown>
+                ) : (
+                  <div key={index} className={`remons-markdown-circle ${item.className ? ` ${item.className}` : ''}`} onClick={item.onClick}>
+                    {item.icon}
+                  </div>
+                );
+                return item.tooltip && IsPC() ? (
+                  <CustomTooltip key={index} title={item.tooltip}>
+                    {btn}
+                  </CustomTooltip>
+                ) : btn;
+              })}
+            </div>
+          )}
+        </>
       }
-      {!hasDiagram && <div className="mermaid-toolbar-loading"><LoadingOutlined /> </div>}
-      {hasDiagram && (
-        <div className="mermaid-toolbar">
-          {[
-            {
-              isShow: showSourceView && isCollapsed && !isFullscreen,
-              icon: isMinimize ? <ExportOutlined /> : <ImportOutlined />,
-              tooltip: isMinimize ? '缩略图' : '最小化',
-              onClick: () => setIsMinimize((prev: boolean) => !prev),
-              className: 'mermaid-minimize-btn',
-            },
-            {
-              isShow: isPanzoomActive,
-              icon: <PlusOutlined />,
-              tooltip: '放大',
-              onClick: () => panzoomRef.current?.zoomIn(),
-            },
-            {
-              isShow: isPanzoomActive,
-              icon: <MinusOutlined />,
-              tooltip: '缩小',
-              onClick: () => panzoomRef.current?.zoomOut(),
-            },
-            {
-              isShow: isPanzoomActive,
-              icon: <ReloadOutlined />,
-              tooltip: '重置',
-              onClick: () => panzoomRef.current?.reset(),
-            },
-            {
-              isShow: showDownload && isPanzoomActive,
-              icon: <DownloadOutlined />,
-              tooltip: '下载',
-              dropdown: downloadMenu,
-            },
-            {
-              isShow: true,
-              icon: isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />,
-              tooltip: isFullscreen ? '退出全屏' : '全屏',
-              onClick: () => {
-                panzoomRef.current?.reset()
-                if (document.fullscreenElement) document.exitFullscreen();
-                else wrapperRef.current?.requestFullscreen?.();
-              },
-              className: 'mermaid-fullscreen-btn',
-            },
-            {
-              isShow: showSourceView && !isFullscreen,
-              icon: <CodeOutlined />,
-              tooltip: '查看源码',
-              onClick: () => setShowSource(true),
-              className: 'mermaid-showcode-btn',
-            },
-            {
-              isShow: showCollapse && !isFullscreen,
-              icon: isCollapsed ? <DownOutlined /> : <UpOutlined />,
-              tooltip: isCollapsed ? '展开' : '收起',
-              onClick: () => setIsCollapsed((prev: boolean) => !prev),
-              className: 'mermaid-collapsed-btn',
-            },
-          ].filter(Boolean).map((item: ToolbarItem, index: number) => {
-            if (item.isShow === false) return null;
-            const btn = item.dropdown ? (
-              <CustomDropdown key={index} items={item.dropdown.items} onClick={item.dropdown.onClick}>
-                <div className={`remons-markdown-circle ${item.className ? ` ${item.className}` : ''}`}>{item.icon}</div>
-              </CustomDropdown>
-            ) : (
-              <div key={index} className={`remons-markdown-circle ${item.className ? ` ${item.className}` : ''}`} onClick={item.onClick}>
-                {item.icon}
-              </div>
-            );
-            return item.tooltip && IsPC() ? (
-              <CustomTooltip key={index} title={item.tooltip}>
-                {btn}
-              </CustomTooltip>
-            ) : btn;
-          })}
-        </div>
-      )}
-
       {/* 错误提示 */}
       {error && <div className={style.errorTip}>⚠️ {error}</div>}
 
@@ -341,7 +363,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
 async function renderMermaidWithControls(props: IProps) {
   const blocks = document.querySelectorAll("code.language-mermaid");
 
-  const { showDriverGuide } = props || {};
+  const { showDriverGuide, isPrintPreview = false } = props || {};
 
   for (const block of blocks) {
     const pre = block.parentElement;
@@ -364,6 +386,7 @@ async function renderMermaidWithControls(props: IProps) {
             showSourceView
             showCollapse
             defaultCollapsed
+            isPrintPreview={isPrintPreview}
             minHeight={200}
             showDriverGuide={showDriverGuide}
           />

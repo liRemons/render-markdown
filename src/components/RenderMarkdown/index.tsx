@@ -48,11 +48,15 @@ interface Props {
   * 是否显示新手引导
   */
   showDriverGuide?: boolean;
+  /**
+   * 是否为打印模式
+   */
+  isPrintPreview?: boolean;
 }
 
 
 const initCodeClassName = (props: Props) => {
-  const { isSlotMermaid = true, isShowCollapsed = true } = props;
+  const { isSlotMermaid = true, isShowCollapsed = true, isPrintPreview = false } = props;
   document.querySelectorAll('.markdown-html code[class*="language-"]').forEach((item) => {
     const codeType = item.className.replace('language-', '').trim();
     const slotMermaidClassName = (isSlotMermaid && codeType === 'mermaid') ? 'mermaid-render-noCode' : ''
@@ -101,16 +105,18 @@ const initCodeClassName = (props: Props) => {
       <span>
         {codeTypeDOM}
       </span>
-      <span>
+      {
+       !isPrintPreview && <span>
         {copyDOM}
         {isShowCollapsed && <CodeToggle />}
       </span>
+      }
     </>)
   });
 };
 
 export default function RenderMarkdown(props: Props) {
-  const { content, createTime, showBackTop, isSlotMermaid = true, codeType, editButton, backTopTarget = document.body, showDriverGuide } = props;
+  const { content, createTime, showBackTop, isSlotMermaid = true, codeType, editButton, backTopTarget = document.body, showDriverGuide, isPrintPreview = false } = props;
   const [html, setHtml] = useState('');
   useEffect(() => {
     let timer = null;
@@ -130,7 +136,7 @@ export default function RenderMarkdown(props: Props) {
         if (isSlotMermaid) {
           // DOM 更新完毕 1s 后渲染 Mermaid, 牺牲 cls 换取首屏加载速度
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
-          await renderMermaid({ showDriverGuide });
+          await renderMermaid({ showDriverGuide, isPrintPreview });
         }
       }, 10);
     };

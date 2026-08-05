@@ -27,6 +27,12 @@
   }
 }
 
+:global(.print-preview) {
+  .previewArea {
+    background: transparent;
+  }
+}
+
 .previewContent {
   width: 100%;
   height: 100%;
@@ -93,6 +99,9 @@
 
     .mermaid-content.disabled-move {
       cursor: initial !important;
+    }
+    &.print-preview {
+      background-color: transparent;
     }
 
     &.mermaid-collapsed {
