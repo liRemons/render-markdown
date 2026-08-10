@@ -23,10 +23,6 @@ function renderAlert(tokens: Array<{ markup: string }>, index: number): string {
         return '';
     }
 
-    console.log(token.markup);
-    
-
-
     return `<p class="markdown-alert-title">
         ${typeMap[token.markup as keyof AlertTypeMap]}
     </p>`
