@@ -32,6 +32,10 @@ export default defineConfig({
       fileName: () => `index.mjs`
     },
     rollupOptions: {
+      treeshake: {
+        moduleSideEffects: (id: string) => /\.(css|less)$/.test(id),
+        propertyReadSideEffects: false,
+      },
       external: ['react', 'react-dom', 'antd', '@ant-design/icons', 'highlight.js', /^highlight\.js\/.*/, 'react/jsx-runtime'],
       output: {
         format: 'es',
@@ -47,7 +51,21 @@ export default defineConfig({
         assetFileNames: 'index.css',
       },
     },
-    minify: true,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        passes: 3,
+        pure_funcs: ['console.log', 'console.info'],
+      },
+      mangle: {
+        safari10: true,
+      },
+      format: {
+        comments: false,
+      },
+    },
     sourcemap: false,
   },
   resolve: {

@@ -9,7 +9,6 @@ import { alert } from "@mdit/plugin-alert";
 import katex from '@vscode/markdown-it-katex';
 import renderAlert from './render-alert';
 
-import 'katex/dist/katex.min.css'
 import renderTab, { tabsName } from './render-tab';
 
 // 轻量级 slugify 函数，替代 uslug

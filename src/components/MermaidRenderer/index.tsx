@@ -133,7 +133,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   const panzoomRef = usePanzoom({
     contentRef, wrapperRef,
     enabled: isPanzoomActive && !!svg && !isPrintPreview,
-    svg, 
+    svg,
     isFullscreen,
   });
 
@@ -158,6 +158,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
         steps: [
           { element: '.docList-menu-copyHtml', popover: { title: '复制', description: '点击此处您可复制 HTML 渲染的格式内容' } },
           { element: '.docList-menu-copyMarkdown', popover: { title: '复制', description: '点击此处您可复制 markdown 源码' } },
+          { element: '.docList-menu-print', popover: { title: '打印', description: '点击此处您可跳转至打印页面，输出为PDF' } },
         ]
       },
       {
