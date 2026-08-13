@@ -19,8 +19,6 @@ interface ModalProps {
   onCancel?: () => void;
   /** 底部内容 */
   footer?: ReactNode | null;
-  /** 关闭时是否销毁子元素 */
-  destroyOnClose?: boolean;
   /** 自定义类名 */
   className?: string;
   /** 弹窗内容 */
@@ -37,7 +35,6 @@ const CustomModal: React.FC<ModalProps> = ({
   width = 520,
   onCancel,
   footer,
-  destroyOnClose: _destroyOnClose = false,
   className = '',
   children,
 }) => {
@@ -90,9 +87,6 @@ const CustomModal: React.FC<ModalProps> = ({
   // 不渲染未打开的弹窗
   if (!open) return null;
 
-  // destroyOnClose 时条件渲染内容
-  const content = children;
-
   const modalContent = (
     <div
       className={cx('modal-mask', 'modal-mask-visible')}
@@ -113,7 +107,7 @@ const CustomModal: React.FC<ModalProps> = ({
 
         {/* 内容区域 */}
         <div className={cx('modal-body')}>
-          {content}
+          {children}
         </div>
 
         {/* 底部区域 */}

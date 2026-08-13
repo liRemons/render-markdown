@@ -12,6 +12,16 @@ const cx = classNames.bind(style);
 type MessageType = 'warning' | 'info' | 'error' | 'success';
 
 /**
+ * 消息类型图标映射
+ */
+const icons: Record<MessageType, ReactNode> = {
+  warning: <WarningOutlined style={{ color: '#faad14', fontSize: '16px' }} />,
+  info: <InfoCircleOutlined style={{ color: '#1890ff', fontSize: '16px' }} />,
+  error: <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: '16px' }} />,
+  success: <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }} />,
+};
+
+/**
  * 单条消息的配置项
  */
 interface MessageConfig {
@@ -26,14 +36,6 @@ interface MessageConfig {
  * 使用 React Portal 渲染到 body，实现全局消息提示
  */
 const MessageToast: React.FC<{ config: MessageConfig }> = ({ config }) => {
-  // 图标映射，使用 antd 图标
-  const icons: Record<MessageType, ReactNode> = {
-    warning: <WarningOutlined style={{ color: '#faad14', fontSize: '16px' }} />,
-    info: <InfoCircleOutlined style={{ color: '#1890ff', fontSize: '16px' }} />,
-    error: <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: '16px' }} />,
-    success: <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }} />,
-  };
-
   return (
     <div className={cx('toast', `toast-${config.type}`)}>
       {icons[config.type]}

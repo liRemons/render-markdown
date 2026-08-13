@@ -43,7 +43,6 @@ export default function useLoadMermaid() {
     loadMermaidScript()
       .then((instance) => {
         if (!cancelled) {
-          instance.initialize({ startOnLoad: false });
           setMermaid(() => instance);
           setLoading(false);
         }

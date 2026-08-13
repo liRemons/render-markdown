@@ -1,4 +1,4 @@
-import { useState, useEffect, RefObject } from "react";
+import { useState, useEffect, useCallback, RefObject } from "react";
 
 interface UseMermaidControlsParams {
   showCollapse: boolean;
@@ -47,13 +47,13 @@ export default function useMermaidControls({
     return () => document.removeEventListener("fullscreenchange", handler);
   }, [showCollapse, isPrintPreview]);
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
       wrapperRef.current?.requestFullscreen?.();
     }
-  };
+  }, [wrapperRef]);
 
   return {
     isFullscreen,

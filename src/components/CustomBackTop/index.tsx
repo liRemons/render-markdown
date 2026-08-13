@@ -16,6 +16,22 @@ interface BackTopProps {
 }
 
 /**
+ * 获取当前滚动容器
+ */
+function getScrollContainer(containerRef: React.RefObject<HTMLElement | null>): HTMLElement | Window {
+  return containerRef.current || window;
+}
+
+/**
+ * 获取滚动容器的 scrollTop
+ */
+function getScrollTop(container: HTMLElement | Window): number {
+  return container === window
+    ? window.scrollY || document.documentElement.scrollTop
+    : (container as HTMLElement).scrollTop;
+}
+
+/**
  * 自定义 BackTop 组件
  * 滚动到顶部按钮，当页面滚动超过指定阈值时显示
  */
@@ -39,29 +55,19 @@ const CustomBackTop: React.FC<BackTopProps> = ({
 
   // 监听滚动事件
   useEffect(() => {
-    const container = containerRef.current || window;
+    const container = getScrollContainer(containerRef);
     
-    /**
-     * 处理滚动事件
-     */
     const handleScroll = () => {
-      let scrollTop = 0;
-      if (container === window) {
-        scrollTop = window.scrollY || document.documentElement.scrollTop;
-      } else {
-        scrollTop = (container as HTMLElement).scrollTop;
-      }
-      setVisible(scrollTop > visibilityHeight);
+      setVisible(getScrollTop(container) > visibilityHeight);
     };
 
-    const eventTarget = container === window ? window : container;
-    eventTarget.addEventListener('scroll', handleScroll, { passive: true });
+    container.addEventListener('scroll', handleScroll, { passive: true });
 
     // 初始检查
     handleScroll();
 
     return () => {
-      eventTarget.removeEventListener('scroll', handleScroll);
+      container.removeEventListener('scroll', handleScroll);
     };
   }, [visibilityHeight]);
 
@@ -69,13 +75,8 @@ const CustomBackTop: React.FC<BackTopProps> = ({
    * 点击按钮滚动到顶部
    */
   const handleClick = () => {
-    const container = containerRef.current || window;
-
-    if (container === window) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      (container as HTMLElement).scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    const container = getScrollContainer(containerRef);
+    container.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (!visible) return null;

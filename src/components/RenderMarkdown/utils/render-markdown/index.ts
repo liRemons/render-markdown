@@ -28,6 +28,7 @@ export type AnchorItem = {
   nodeTitle: string;
   href: string;
   nodeName: string;
+  children: AnchorItem[];
 }
 
 interface RawAnchorNode {
@@ -95,7 +96,7 @@ function renderMarkdown(content: string) {
     });
 
   const info = md.render(content);
-  setTimeout(() => renderTab(), 10);
+  requestAnimationFrame(() => renderTab());
 
   return {
     anchor: formatAnchors(clonedeep(rawAnchors)),

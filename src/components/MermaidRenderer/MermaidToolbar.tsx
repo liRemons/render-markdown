@@ -117,19 +117,20 @@ export default function MermaidToolbar({
 
   return (
     <div className="mermaid-toolbar">
-      {items.map((item, index) => {
+      {items.map((item) => {
         if (item.isShow === false) return null;
+        const itemKey = item.className || item.tooltip;
         const btn = item.dropdown ? (
-          <CustomDropdown key={index} items={item.dropdown.items} onClick={item.dropdown.onClick}>
+          <CustomDropdown key={itemKey} items={item.dropdown.items} onClick={item.dropdown.onClick}>
             <div className={`remons-markdown-circle ${item.className || ''}`}>{item.icon}</div>
           </CustomDropdown>
         ) : (
-          <div key={index} className={`remons-markdown-circle ${item.className || ''}`} onClick={item.onClick}>
+          <div key={itemKey} className={`remons-markdown-circle ${item.className || ''}`} onClick={item.onClick}>
             {item.icon}
           </div>
         );
         return item.tooltip && IsPC() ? (
-          <CustomTooltip key={index} title={item.tooltip}>
+          <CustomTooltip key={`${itemKey}-tooltip`} title={item.tooltip}>
             {btn}
           </CustomTooltip>
         ) : btn;

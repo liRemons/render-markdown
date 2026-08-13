@@ -21,7 +21,7 @@ export default async function renderMermaidWithControls(
 
   for (const block of blocks) {
     const pre = block.parentElement;
-    if (!pre) return;
+    if (!pre) continue;
     const source = block.textContent.trim();
 
     const container = document.createElement("div");

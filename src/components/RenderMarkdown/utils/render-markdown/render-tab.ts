@@ -5,6 +5,10 @@
 
 export const tabsName = 'markdown-tabs';
 
+/** 模块级存储 observer 和 resize handler，防止重复创建导致内存泄漏 */
+let tabObserver: MutationObserver | null = null;
+let resizeHandler: (() => void) | null = null;
+
 function listenScroll() {
   const parentElement = document.querySelector('.markdown') as HTMLElement | null;
   if (!parentElement || parentElement.dataset.scrollListenInited) return;
@@ -79,9 +83,15 @@ function addMask() {
   // 2. 初始化页面中已存在的滚动元素
   document.querySelectorAll('.markdown-tabs-tabs-header').forEach(el => initScrollMask(el as HTMLElement));
 
-  // 3. 使用 MutationObserver 监听 DOM 变化
+  // 3. 清理旧的 observer，防止重复创建
+  if (tabObserver) {
+    tabObserver.disconnect();
+    tabObserver = null;
+  }
+
+  // 4. 使用 MutationObserver 监听 DOM 变化
   // 这样即使后续通过 JS 动态插入了新的 .scroll-content，也能自动绑定蒙层逻辑
-  const observer = new MutationObserver(mutations => {
+  tabObserver = new MutationObserver(mutations => {
     mutations.forEach(mutation => {
       mutation.addedNodes.forEach(node => {
         if (node.nodeType !== 1) return; // 忽略文本节点
@@ -97,15 +107,22 @@ function addMask() {
     });
   });
 
-  observer.observe(parentElement!, { childList: true, subtree: true });
+  if (parentElement) {
+    tabObserver.observe(parentElement, { childList: true, subtree: true });
+  }
 
-  // 4. 窗口大小改变时，重新计算所有滚动元素的蒙层状态
-  window.addEventListener('resize', () => {
+  // 5. 清理旧的 resize handler，防止重复绑定
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler);
+  }
+
+  // 6. 窗口大小改变时，重新计算所有滚动元素的蒙层状态
+  resizeHandler = () => {
     document.querySelectorAll('.markdown-tabs-tabs-header').forEach(el => {
       el.dispatchEvent(new Event('scroll'));
     });
-  });
-
+  };
+  window.addEventListener('resize', resizeHandler);
 }
 
 function renderTab() {
@@ -113,10 +130,14 @@ function renderTab() {
   const wrappers = document.querySelectorAll(`.${tabsName}-tabs-wrapper`);
 
   wrappers.forEach(wrapper => {
-    const header = wrapper.querySelector(`.${tabsName}-tabs-header`);
+    const header = wrapper.querySelector(`.${tabsName}-tabs-header`) as HTMLElement | null;
     const contents = wrapper.querySelector(`.${tabsName}-tabs-container`);
 
     if (!header || !contents) return;
+
+    // 防止重复绑定点击事件
+    if (header.dataset.clickInited) return;
+    header.dataset.clickInited = 'true';
 
     // 获取该组内的所有内容块（只需获取一次，无需在每次点击时重复查询）
     const panels = contents.querySelectorAll(`.${tabsName}-tab-content`);

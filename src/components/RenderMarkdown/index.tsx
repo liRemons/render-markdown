@@ -9,7 +9,7 @@ import renderMarkdown from './utils/render-markdown';
 import './markdown.global.less';
 import './index.global.less';
 
-/** 记录 initCodeClassName 中为每个 <pre> 创建的 React Root，防止内存泄漏 */
+/** 记录 initCodeToolbars 中为每个 <pre> 创建的 React Root，防止内存泄漏 */
 const codeRootMap = new Map<HTMLElement, Root>();
 
 /**
@@ -17,15 +17,12 @@ const codeRootMap = new Map<HTMLElement, Root>();
  */
 function CodeToggle({ preNode }: { preNode: HTMLElement }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const handleClick = () => {
+    setIsCollapsed(!isCollapsed);
+    preNode.classList.toggle('code-collapsed', isCollapsed);
+  };
   return (
-    <span className="code-toggle" onClick={() => {
-      setIsCollapsed(!isCollapsed);
-      if (isCollapsed) {
-        preNode.classList.remove('code-collapsed');
-      } else {
-        preNode.classList.add('code-collapsed');
-      }
-    }}>
+    <span className="code-toggle" onClick={handleClick}>
       {isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
     </span>
   );
@@ -82,7 +79,7 @@ export interface RenderMarkdownProps {
 }
 
 
-const initCodeClassName = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'isShowCollapsed' | 'isPrintPreview'>) => {
+const initCodeToolbars = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'isShowCollapsed' | 'isPrintPreview'>) => {
   const { isSlotMermaid = true, isShowCollapsed = true, isPrintPreview = false } = props;
   document.querySelectorAll('.markdown-html code[class*="language-"]').forEach((item) => {
     const codeType = item.className.replace('language-', '').trim();
@@ -158,7 +155,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       }
 
       timer = setTimeout(async () => {
-        initCodeClassName(propsRef.current);
+        initCodeToolbars(propsRef.current);
         if (isSlotMermaid) {
           // DOM 更新完毕 1s 后渲染 Mermaid, 牺牲 cls 换取首屏加载速度
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
