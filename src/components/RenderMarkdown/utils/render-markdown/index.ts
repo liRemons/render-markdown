@@ -22,7 +22,7 @@ function slugify(str: string): string {
     .replace(/-+/g, '-');
 }
 
-type AnchorItem = {
+export type AnchorItem = {
   title: string;
   nodeTitle: string;
   href: string;

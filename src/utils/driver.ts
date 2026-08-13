@@ -20,7 +20,7 @@ type Data = Array<{
   condition?: () => boolean;
   // 引导打开时调用
   onOpen?: () => void;
-  id: String;
+  id: string;
 }>
 
 /** 当前正在展示的 driver 实例与索引，防止重复调用导致多个引导同时打开 */

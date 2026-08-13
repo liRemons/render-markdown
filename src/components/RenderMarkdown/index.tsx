@@ -10,7 +10,7 @@ import './markdown.global.less';
 import './index.global.less';
 
 
-interface Props {
+export interface RenderMarkdownProps {
   /**
    * Markdown 内容
    */
@@ -64,7 +64,7 @@ interface Props {
 }
 
 
-const initCodeClassName = (props: Props) => {
+const initCodeClassName = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'isShowCollapsed' | 'isPrintPreview'>) => {
   const { isSlotMermaid = true, isShowCollapsed = true, isPrintPreview = false } = props;
   document.querySelectorAll('.markdown-html code[class*="language-"]').forEach((item) => {
     const codeType = item.className.replace('language-', '').trim();
@@ -124,7 +124,7 @@ const initCodeClassName = (props: Props) => {
   });
 };
 
-export default function RenderMarkdown(props: Props) {
+export default function RenderMarkdown(props: RenderMarkdownProps) {
   const {
     content,
     createTime,

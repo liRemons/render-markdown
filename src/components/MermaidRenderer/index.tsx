@@ -100,23 +100,6 @@ interface MermaidRendererProps {
   chartConfig?: (text: string) => string;
 }
 
-interface IProps {
-  showDriverGuide?: boolean;
-  /** 
-  * 是否为打印模式 
-  */
-  isPrintPreview?: boolean;
-  /**
-  * 自定义配置函数，对渲染前 text 进行修改
-  * @returns 
-  */
-  chartConfig?: (text: string) => string;
-  /**
-   * 默认折叠状态
-   */
-  defaultCollapsed?: boolean;
-}
-
 // ==================== 统一 Mermaid 渲染组件 ====================
 const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidRenderer({
   source,
@@ -378,7 +361,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
 });
 
 // ==================== DOM 扫描入口（文档页使用） ====================
-async function renderMermaidWithControls(props: IProps) {
+async function renderMermaidWithControls(props: Pick<MermaidRendererProps, 'showDriverGuide' | 'isPrintPreview' | 'chartConfig' | 'defaultCollapsed'>) {
   const blocks = document.querySelectorAll("code.language-mermaid");
 
   const { showDriverGuide, isPrintPreview = false, chartConfig, defaultCollapsed = true } = props || {};

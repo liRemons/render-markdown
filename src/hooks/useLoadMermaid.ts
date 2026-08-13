@@ -2,13 +2,18 @@
 import { useState, useEffect } from 'react';
 import { jsMap } from '@/utils/preload';
 
+export interface MermaidInstance {
+  initialize: (config: Record<string, unknown>) => void;
+  render: (id: string, text: string) => Promise<{ svg: string }>;
+}
+
 declare global {
   interface Window {
-    mermaid: any;
+    mermaid: MermaidInstance | undefined;
   }
 }
 
-let mermaidPromise: Promise<any> | null = null;
+let mermaidPromise: Promise<MermaidInstance> | null = null;
 
 function loadMermaidScript() {
   if (!mermaidPromise) {
@@ -19,7 +24,7 @@ function loadMermaidScript() {
       }
       const script = document.createElement('script');
       script.src = jsMap.mermaid;
-      script.onload = () => resolve(window.mermaid);
+      script.onload = () => resolve(window.mermaid!);
       script.onerror = () => reject(new Error('Mermaid 脚本加载失败'));
       document.head.appendChild(script);
     });
@@ -28,7 +33,7 @@ function loadMermaidScript() {
 }
 
 export default function useLoadMermaid() {
-  const [mermaid, setMermaid] = useState<any>(null);
+  const [mermaid, setMermaid] = useState<MermaidInstance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
