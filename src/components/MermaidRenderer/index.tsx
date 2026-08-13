@@ -93,6 +93,11 @@ interface MermaidRendererProps {
    * 是否为打印模式
    */
   isPrintPreview?: boolean;
+  /**
+   * 自定义配置函数，对渲染前 text 进行修改
+   * @returns 
+   */
+  chartConfig?: (text: string) => string;
 }
 
 interface IProps {
@@ -101,6 +106,15 @@ interface IProps {
   * 是否为打印模式 
   */
   isPrintPreview?: boolean;
+  /**
+  * 自定义配置函数，对渲染前 text 进行修改
+  * @returns 
+  */
+  chartConfig?: (text: string) => string;
+  /**
+   * 默认折叠状态
+   */
+  defaultCollapsed?: boolean;
 }
 
 // ==================== 统一 Mermaid 渲染组件 ====================
@@ -116,12 +130,13 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   minHeight = 200,
   showDriverGuide,
   isPrintPreview = false,
+  chartConfig,
 }) {
   const titleMatch = source.match(/---\s*\n\s*title:\s*(.+)\s*\n\s*---/);
   const title = titleMatch ? titleMatch[1].trim() : 'mermaid 图表';
   const { isDark } = useTheme();
 
-  const { svg, error, loading } = useMermaidRender({ source, debounceMs, isDark });
+  const { svg, error, loading } = useMermaidRender({ source, debounceMs, isDark, chartConfig });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [showSource, setShowSource] = useState(false);
@@ -165,11 +180,12 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
         id: mermaidDriverKey,
         condition: () => {
           const result = svg && !localStorage[mermaidDriverKey] && showSourceView;
-          return result
+          return !!result
         },
         onOpen: () => localStorage[mermaidDriverKey] = 1,
         steps: [
           { element: '.mermaid-react-root .mermaid-mini', popover: { title: 'mermaid', description: '恭喜您解锁 Mermaid 渲染图表' } },
+          { element: '.docList-menu-mermaid-collapse', popover: { title: '展开收起mermaid', description: '点击此处按钮可一键展开收起mermaid图表' }, isShow: !!svg },
           { element: '.mermaid-react-root .mermaid-mini .mermaid-minimize-btn', popover: { title: '缩略图', description: '点击此处按钮可查看缩略图' } },
           { element: '.mermaid-react-root .mermaid-mini .mermaid-fullscreen-btn', popover: { title: '全屏', description: '点击此处按钮可切换为全屏展示' } },
           { element: '.mermaid-react-root .mermaid-mini .mermaid-showcode-btn', popover: { title: '源码', description: '点击此处按钮查看源码弹窗' } },
@@ -365,7 +381,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
 async function renderMermaidWithControls(props: IProps) {
   const blocks = document.querySelectorAll("code.language-mermaid");
 
-  const { showDriverGuide, isPrintPreview = false } = props || {};
+  const { showDriverGuide, isPrintPreview = false, chartConfig, defaultCollapsed = true } = props || {};
 
   for (const block of blocks) {
     const pre = block.parentElement;
@@ -387,7 +403,8 @@ async function renderMermaidWithControls(props: IProps) {
             showDownload
             showSourceView
             showCollapse
-            defaultCollapsed
+            chartConfig={chartConfig}
+            defaultCollapsed={defaultCollapsed}
             isPrintPreview={isPrintPreview}
             minHeight={200}
             showDriverGuide={showDriverGuide}

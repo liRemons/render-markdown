@@ -14,9 +14,14 @@ interface UseMermaidRenderParams {
   source: string;
   debounceMs?: number;
   isDark: boolean;
+  /**
+   * 自定义配置函数，对渲染前 text 进行修改
+   * @returns 
+   */
+  chartConfig?: (text: string) => string;
 }
 
-export default function useMermaidRender({ source, debounceMs = 300, isDark }: UseMermaidRenderParams) {
+export default function useMermaidRender({ source, debounceMs = 300, isDark, chartConfig }: UseMermaidRenderParams) {
   const { mermaid, loading } = useLoadMermaid();
   const [svg, setSvg] = useState("");
   const [error, setError] = useState("");
@@ -46,7 +51,7 @@ export default function useMermaidRender({ source, debounceMs = 300, isDark }: U
     const timer = setTimeout(async () => {
       const id = `mermaid-render-${renderIdSeq++}`;
       try {
-        const { svg: svgStr } = await mermaid.render(id, text);
+        const { svg: svgStr } = await mermaid.render(id, (chartConfig ? chartConfig(text) : text));
         if (seq !== renderSeqRef.current) return;
         setSvg(svgStr);
         setError("");

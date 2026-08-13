@@ -10,6 +10,7 @@ type StepItem = {
     // 描述
     description: string;
   }
+  isShow?: boolean; // 是否展示引导，如果为 false，则不展示引导
 }
 
 type Data = Array<{
@@ -74,7 +75,7 @@ export default function driverRender(data: Data) {
         activeDriver = null;
         renderGuide(index + 1);
       },
-      steps: current.steps,
+      steps: current.steps.filter(step => step.isShow !== false) || [] // 过滤掉 isShow 为 false 的步骤,
     });
     activeDriver = driverObj;
     driverObj.drive();

@@ -52,6 +52,15 @@ interface Props {
    * 是否为打印模式
    */
   isPrintPreview?: boolean;
+  /**
+ * 自定义配置函数，对渲染前 text 进行修改
+ * @returns 
+ */
+  chartConfig?: (text: string) => string;
+  /**
+  * 默认是否折叠代码
+  */
+  defaultCollapsed?: boolean;
 }
 
 
@@ -106,21 +115,33 @@ const initCodeClassName = (props: Props) => {
         {codeTypeDOM}
       </span>
       {
-       !isPrintPreview && <span>
-        {copyDOM}
-        {isShowCollapsed && <CodeToggle />}
-      </span>
+        !isPrintPreview && <span>
+          {copyDOM}
+          {isShowCollapsed && <CodeToggle />}
+        </span>
       }
     </>)
   });
 };
 
 export default function RenderMarkdown(props: Props) {
-  const { content, createTime, showBackTop, isSlotMermaid = true, codeType, editButton, backTopTarget = document.body, showDriverGuide, isPrintPreview = false } = props;
+  const {
+    content,
+    createTime,
+    showBackTop,
+    isSlotMermaid = true,
+    codeType,
+    editButton,
+    backTopTarget = document.body,
+    showDriverGuide,
+    isPrintPreview = false,
+    defaultCollapsed = true,
+    chartConfig 
+  } = props;
   const [html, setHtml] = useState('');
   useEffect(() => {
     let timer = null;
-    
+
     // 异步初始化
     const init = async () => {
       // 注册默认支持的语言列表
@@ -136,11 +157,11 @@ export default function RenderMarkdown(props: Props) {
         if (isSlotMermaid) {
           // DOM 更新完毕 1s 后渲染 Mermaid, 牺牲 cls 换取首屏加载速度
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
-          await renderMermaid({ showDriverGuide, isPrintPreview });
+          await renderMermaid({ showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed });
         }
       }, 10);
     };
-    
+
     init();
 
     return () => {
