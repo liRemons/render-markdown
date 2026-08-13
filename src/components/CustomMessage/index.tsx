@@ -135,62 +135,34 @@ const initMessageContainer = () => {
  */
 const customMessage = {
   /**
-   * 显示警告消息
+   * 公共消息分发方法
    */
-  warning: (content: string, duration?: number) => {
+  dispatch: (type: MessageType, content: string, duration?: number) => {
     initMessageContainer();
-    // 使用 requestAnimationFrame 确保 DOM 已更新后再发送事件
     requestAnimationFrame(() => {
       window.dispatchEvent(
         new CustomEvent('custom-message', {
-          detail: { type: 'warning', content, duration },
+          detail: { type, content, duration },
         })
       );
     });
   },
-
+  /**
+   * 显示警告消息
+   */
+  warning: (content: string, duration?: number) => customMessage.dispatch('warning', content, duration),
   /**
    * 显示信息消息
    */
-  info: (content: string, duration?: number) => {
-    initMessageContainer();
-    requestAnimationFrame(() => {
-      window.dispatchEvent(
-        new CustomEvent('custom-message', {
-          detail: { type: 'info', content, duration },
-        })
-      );
-    });
-  },
-
+  info: (content: string, duration?: number) => customMessage.dispatch('info', content, duration),
   /**
    * 显示错误消息
    */
-  error: (content: string, duration?: number) => {
-    initMessageContainer();
-    requestAnimationFrame(() => {
-      window.dispatchEvent(
-        new CustomEvent('custom-message', {
-          detail: { type: 'error', content, duration },
-        })
-      );
-    });
-  },
-
+  error: (content: string, duration?: number) => customMessage.dispatch('error', content, duration),
   /**
    * 显示成功消息
    */
-  success: (content: string, duration?: number) => {
-    initMessageContainer();
-    requestAnimationFrame(() => {
-      window.dispatchEvent(
-        new CustomEvent('custom-message', {
-          detail: { type: 'success', content, duration },
-        })
-      );
-    });
-  },
-
+  success: (content: string, duration?: number) => customMessage.dispatch('success', content, duration),
   /**
    * 清除所有消息
    */

@@ -1,6 +1,13 @@
 ﻿import customMessage from '@/components/CustomMessage';
 
 /**
+ * 将 SVG 字符串转为 data URL
+ */
+function svgToDataUrl(svgStr: string): string {
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgStr)))}`;
+}
+
+/**
  * 通用下载：将 Blob 或 URL 作为文件下载
  * @param {Blob|string} data - Blob 对象或 URL 字符串
  * @param {string} filename - 下载文件名
@@ -44,8 +51,7 @@ export function downloadSVG(svgStr: string, filename = "image") {
  */
 export function downloadSVGAsPNG(svgStr: string, filename = "image", scale = 2) {
   const { w, h } = getSvgSize(svgStr);
-  const encoded = btoa(unescape(encodeURIComponent(svgStr)));
-  const url = `data:image/svg+xml;base64,${encoded}`;
+  const url = svgToDataUrl(svgStr);
 
   const img = new Image();
   img.crossOrigin = "anonymous";

@@ -1,20 +1,13 @@
-﻿import React, { useState, useRef, useEffect, useCallback, forwardRef } from "react";
-import { createRoot } from "react-dom/client";
+﻿import React, { useRef, useEffect, useCallback, forwardRef } from "react";
 import { downloadSVG, downloadSVGAsPNG } from "@/utils/download";
-import {
-  PlusOutlined, MinusOutlined,
-  FullscreenOutlined, FullscreenExitOutlined,
-  DownloadOutlined, ReloadOutlined, CodeOutlined,
-  UpOutlined, DownOutlined,
-  ImportOutlined, ExportOutlined, LoadingOutlined
-} from "@ant-design/icons";
+import { LoadingOutlined } from "@ant-design/icons";
 import { useTheme, ThemeProvider } from "@/hooks/useTheme";
 import customMessage from "@/components/CustomMessage";
-import CustomTooltip from "@/components/CustomTooltip";
-import CustomDropdown from "@/components/CustomDropdown";
 import CustomModal from "@/components/CustomModal";
 import useMermaidRender from "./useMermaidRender";
 import usePanzoom from "./usePanzoom";
+import useMermaidControls from "./useMermaidControls";
+import MermaidToolbar from "./MermaidToolbar";
 import style from "./index.module.less";
 import '@/assets/css/index.global.less';
 import classNames from "classnames/bind";
@@ -26,27 +19,6 @@ import RenderMarkdown from "../RenderMarkdown";
 const mermaidDriverKey = 'docList-mermaid-driver';
 const menuDriverKey = 'docList-menu-driver';
 const menuPcDriverKey = 'docList-pc-menu-driver';
-
-/**
- * 工具栏按钮项接口
- */
-interface ToolbarItem {
-  /** 是否显示 */
-  isShow?: boolean;
-  /** 图标 */
-  icon: React.ReactNode;
-  /** 提示文本 */
-  tooltip: string;
-  /** 点击回调 */
-  onClick?: () => void;
-  /** 下拉菜单配置 */
-  dropdown?: {
-    items: Array<{ key: string; label: string }>;
-    onClick: ({ key }: { key: string }) => void;
-  };
-  /** 自定义类名 */
-  className?: string;
-}
 
 interface MermaidRendererProps {
   /**
@@ -115,18 +87,32 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   isPrintPreview = false,
   chartConfig,
 }) {
-  const titleMatch = source.match(/---\s*\n\s*title:\s*(.+)\s*\n\s*---/);
-  const title = titleMatch ? titleMatch[1].trim() : 'mermaid 图表';
   const { isDark } = useTheme();
-
   const { svg, error, loading } = useMermaidRender({ source, debounceMs, isDark, chartConfig });
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-  const [showSource, setShowSource] = useState(false);
-  const [isMinimize, setIsMinimize] = useState(showSourceView);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const {
+    isFullscreen,
+    isCollapsed,
+    setIsCollapsed,
+    showSource,
+    setShowSource,
+    isMinimize,
+    setIsMinimize,
+    toggleFullscreen,
+  } = useMermaidControls({
+    showCollapse,
+    showSourceView,
+    defaultCollapsed,
+    isPrintPreview,
+    svg,
+    error,
+    loading,
+    wrapperRef,
+  });
+
   const isPanzoomActive = enablePanzoom && (isFullscreen || !isCollapsed || !showCollapse);
   const panzoomRef = usePanzoom({
     contentRef, wrapperRef,
@@ -135,6 +121,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
     isFullscreen,
   });
 
+  // 新手引导
   useEffect(() => {
     showDriverGuide && !isPrintPreview && driverRender([
       {
@@ -176,37 +163,20 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
         ]
       }
     ])
-  }, [svg])
+  }, [svg, showDriverGuide, isPrintPreview, showSourceView])
 
-  useEffect(() => {
-    if (isPrintPreview && svg && !error && !loading) {
-      setIsCollapsed(false);
-    }
-  }, [isPrintPreview, svg, error, loading])
-
-  // 监听原生全屏状态
-  useEffect(() => {
-    const handler = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-      if (!document.fullscreenElement && showCollapse) {
-        setIsCollapsed(true);
-      }
-    };
-    if (!isPrintPreview) {
-      document.addEventListener("fullscreenchange", handler);
-    }
-    return () => document.removeEventListener("fullscreenchange", handler);
-  }, [showCollapse, isPrintPreview]);
+  const titleMatch = source.match(/---\s*\n\s*title:\s*(.+)\s*\n\s*---/);
+  const title = titleMatch ? titleMatch[1].trim() : 'mermaid 图表';
 
   const handleDownloadSVG = useCallback(() => {
     if (!svg) { customMessage.warning("暂无图表"); return; }
     downloadSVG(svg, title);
-  }, [svg]);
+  }, [svg, title]);
 
   const handleDownloadPNG = useCallback(() => {
     if (!svg) { customMessage.warning("暂无图表"); return; }
     downloadSVGAsPNG(svg, title, 2);
-  }, [svg]);
+  }, [svg, title]);
 
   const downloadMenu = {
     items: [
@@ -224,7 +194,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
       className={
         classNames.bind(style)(
           showCollapse ? "mermaid-wrapper" : "",
-          isCollapsed && showCollapse && !isMinimize ? " mermaid-collapsed" : "",
+          isCollapsed && showCollapse && !isMinimize ? "mermaid-collapsed" : "",
           className,
           isMinimize && isCollapsed && !isFullscreen ? 'mermaid-mini' : '',
           isPrintPreview ? 'print-preview' : ''
@@ -232,99 +202,37 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
       }
       style={{ minHeight: isMinimize ? 0 : minHeight, position: "relative", height: '100%' }}
     >
-      {
-        !isPrintPreview && <>
-          {/* 工具栏 */}
-          {
-            showSourceView && <div className="mermaid-title">
-              <span className="mermaid-title-tag">
-                <img src={mermaidSvg} alt="" />
-                <span className="mermaid-title-text">Mermaid</span>
-              </span>
-              {title}
-            </div>
-          }
-          {!hasDiagram && <div className="mermaid-toolbar-loading"><LoadingOutlined /> </div>}
-          {hasDiagram && (
-            <div className="mermaid-toolbar">
-              {[
-                {
-                  isShow: showSourceView && isCollapsed && !isFullscreen,
-                  icon: isMinimize ? <ExportOutlined /> : <ImportOutlined />,
-                  tooltip: isMinimize ? '缩略图' : '最小化',
-                  onClick: () => setIsMinimize((prev: boolean) => !prev),
-                  className: 'mermaid-minimize-btn',
-                },
-                {
-                  isShow: isPanzoomActive,
-                  icon: <PlusOutlined />,
-                  tooltip: '放大',
-                  onClick: () => panzoomRef.current?.zoomIn(),
-                },
-                {
-                  isShow: isPanzoomActive,
-                  icon: <MinusOutlined />,
-                  tooltip: '缩小',
-                  onClick: () => panzoomRef.current?.zoomOut(),
-                },
-                {
-                  isShow: isPanzoomActive,
-                  icon: <ReloadOutlined />,
-                  tooltip: '重置',
-                  onClick: () => panzoomRef.current?.reset(),
-                },
-                {
-                  isShow: showDownload && isPanzoomActive,
-                  icon: <DownloadOutlined />,
-                  tooltip: '下载',
-                  dropdown: downloadMenu,
-                },
-                {
-                  isShow: true,
-                  icon: isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />,
-                  tooltip: isFullscreen ? '退出全屏' : '全屏',
-                  onClick: () => {
-                    panzoomRef.current?.reset()
-                    if (document.fullscreenElement) document.exitFullscreen();
-                    else wrapperRef.current?.requestFullscreen?.();
-                  },
-                  className: 'mermaid-fullscreen-btn',
-                },
-                {
-                  isShow: showSourceView && !isFullscreen,
-                  icon: <CodeOutlined />,
-                  tooltip: '查看源码',
-                  onClick: () => setShowSource(true),
-                  className: 'mermaid-showcode-btn',
-                },
-                {
-                  isShow: showCollapse && !isFullscreen,
-                  icon: isCollapsed ? <DownOutlined /> : <UpOutlined />,
-                  tooltip: isCollapsed ? '展开' : '收起',
-                  onClick: () => setIsCollapsed((prev: boolean) => !prev),
-                  className: 'mermaid-collapsed-btn',
-                },
-              ].filter(Boolean).map((item: ToolbarItem, index: number) => {
-                if (item.isShow === false) return null;
-                const btn = item.dropdown ? (
-                  <CustomDropdown key={index} items={item.dropdown.items} onClick={item.dropdown.onClick}>
-                    <div className={`remons-markdown-circle ${item.className ? ` ${item.className}` : ''}`}>{item.icon}</div>
-                  </CustomDropdown>
-                ) : (
-                  <div key={index} className={`remons-markdown-circle ${item.className ? ` ${item.className}` : ''}`} onClick={item.onClick}>
-                    {item.icon}
-                  </div>
-                );
-                return item.tooltip && IsPC() ? (
-                  <CustomTooltip key={index} title={item.tooltip}>
-                    {btn}
-                  </CustomTooltip>
-                ) : btn;
-              })}
-            </div>
-          )}
-        </>
-      }
+      {!isPrintPreview && <>
+        {showSourceView && <div className="mermaid-title">
+          <span className="mermaid-title-tag">
+            <img src={mermaidSvg} alt="" />
+            <span className="mermaid-title-text">Mermaid</span>
+          </span>
+          {title}
+        </div>}
+        {!hasDiagram && <div className="mermaid-toolbar-loading"><LoadingOutlined /> </div>}
+        {hasDiagram && (
+          <MermaidToolbar
+            showSourceView={showSourceView}
+            showCollapse={showCollapse}
+            showDownload={showDownload}
+            isFullscreen={isFullscreen}
+            isCollapsed={isCollapsed}
+            isMinimize={isMinimize}
+            isPanzoomActive={isPanzoomActive}
+            setIsMinimize={setIsMinimize}
+            setIsCollapsed={setIsCollapsed}
+            setShowSource={setShowSource}
+            toggleFullscreen={() => {
+              panzoomRef.current?.reset();
+              toggleFullscreen();
+            }}
+            downloadMenu={downloadMenu}
+            panzoomRef={panzoomRef}
+          />
+        )}
+      </>}
+
       {/* 错误提示 */}
       {error && <div className={style.errorTip}>⚠️ {error}</div>}
 
@@ -360,45 +268,10 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   );
 });
 
-// ==================== DOM 扫描入口（文档页使用） ====================
-async function renderMermaidWithControls(props: Pick<MermaidRendererProps, 'showDriverGuide' | 'isPrintPreview' | 'chartConfig' | 'defaultCollapsed'>) {
-  const blocks = document.querySelectorAll("code.language-mermaid");
-
-  const { showDriverGuide, isPrintPreview = false, chartConfig, defaultCollapsed = true } = props || {};
-
-  for (const block of blocks) {
-    const pre = block.parentElement;
-    if (!pre) return;
-    const source = block.textContent.trim();
-
-    const container = document.createElement("div");
-    container.className = "mermaid-react-root";
-    pre.replaceWith(container);
-
-    const root = createRoot(container);
-
-    root.render(
-      <React.StrictMode>
-        <ThemeProvider>
-          <MermaidRenderer
-            source={source}
-            enablePanzoom
-            showDownload
-            showSourceView
-            showCollapse
-            chartConfig={chartConfig}
-            defaultCollapsed={defaultCollapsed}
-            isPrintPreview={isPrintPreview}
-            minHeight={200}
-            showDriverGuide={showDriverGuide}
-          />
-        </ThemeProvider>
-      </React.StrictMode>
-    );
-  }
-}
-
 export default MermaidRenderer;
+
+// ==================== DOM 扫描入口（文档页使用） ====================
+import renderMermaidWithControls from './renderMermaidWithControls';
 
 const renderMermaid = (props: MermaidRendererProps) => {
   return (

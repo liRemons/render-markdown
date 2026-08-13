@@ -1,10 +1,10 @@
 import style from './index.module.less';
 
-interface MyEmptyProps {
+interface EmptyProps {
   description?: string;
 }
 
-export default function MyEmpty({ description = '暂无数据' }: MyEmptyProps) {
+export default function Empty({ description = '暂无数据' }: EmptyProps) {
   return (
     <div className={style.empty_container}>
       <svg width="64" height="64" viewBox="0 0 64 64" fill="none">

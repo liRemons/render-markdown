@@ -37,7 +37,7 @@ const CustomModal: React.FC<ModalProps> = ({
   width = 520,
   onCancel,
   footer,
-  destroyOnClose = false,
+  destroyOnClose: _destroyOnClose = false,
   className = '',
   children,
 }) => {
@@ -91,7 +91,7 @@ const CustomModal: React.FC<ModalProps> = ({
   if (!open) return null;
 
   // destroyOnClose 时条件渲染内容
-  const content = destroyOnClose && !open ? null : children;
+  const content = children;
 
   const modalContent = (
     <div

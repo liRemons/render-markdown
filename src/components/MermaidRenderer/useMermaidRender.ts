@@ -66,7 +66,7 @@ export default function useMermaidRender({ source, debounceMs = 300, isDark, cha
       }
     }, debounceMs);
     return () => clearTimeout(timer);
-  }, [source, isDark, mermaid, debounceMs]);
+  }, [source, isDark, mermaid, debounceMs, chartConfig]);
 
   return { svg, error, loading };
 }

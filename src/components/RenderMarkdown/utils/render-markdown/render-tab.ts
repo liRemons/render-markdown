@@ -6,7 +6,9 @@
 export const tabsName = 'markdown-tabs';
 
 function listenScroll() {
-  const parentElement = document.querySelector('.markdown');
+  const parentElement = document.querySelector('.markdown') as HTMLElement | null;
+  if (!parentElement || parentElement.dataset.scrollListenInited) return;
+  parentElement.dataset.scrollListenInited = 'true';
 
   parentElement?.addEventListener('wheel', (e: Event) => {
     const wheelEvent = e as WheelEvent;

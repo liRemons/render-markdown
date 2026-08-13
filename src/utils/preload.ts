@@ -1,7 +1,7 @@
 import cdn from './cdn';
 
 export const jsMap: Record<string, string> = cdn.reduce((acc, item) => {
-  acc[item.externalsName as string] = item.url;
+  acc[item.externalsName] = item.url;
   return acc;
 }, {} as Record<string, string>);
 

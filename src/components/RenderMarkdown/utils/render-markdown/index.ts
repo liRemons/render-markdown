@@ -8,10 +8,11 @@ import { tab } from "@mdit/plugin-tab";
 import { alert } from "@mdit/plugin-alert";
 import katex from '@vscode/markdown-it-katex';
 import renderAlert from './render-alert';
-
 import renderTab, { tabsName } from './render-tab';
 
-// 轻量级 slugify 函数，替代 uslug
+// ==================== 工具函数 ====================
+
+/** 轻量级 slugify，替代 uslug */
 function slugify(str: string): string {
   if (typeof str !== 'string') return '';
   return str
@@ -29,37 +30,53 @@ export type AnchorItem = {
   nodeName: string;
 }
 
+interface RawAnchorNode {
+  n: string;  // 标题文本
+  l: number;  // 标题层级
+  c?: RawAnchorNode[];  // 子节点
+}
+
+/** 将原始锚点树递归展平为 AnchorItem 列表 */
+function formatAnchors(data: RawAnchorNode[]): AnchorItem[] {
+  if (!data) return [];
+  return data.map((item) => ({
+    href: slugify(item.n.trim()),
+    title: item.n.trim(),
+    children: formatAnchors(item.c || []),
+    nodeName: `H${item.l}`,
+    nodeTitle: `<h${item.l}>${item.n.trim()}</h${item.l}>`,
+  }));
+}
+
+// ==================== 核心渲染 ====================
+
 function renderMarkdown(content: string) {
-  let anchor: Array<AnchorItem & { children: Array<AnchorItem> }> = [];
-  const uslugify = (s: any) => slugify(s);
-  const MD = new markdownIt({
+  let rawAnchors: RawAnchorNode[] = [];
+
+  const md = new markdownIt({
     langPrefix: 'language-',
     html: true,
     highlight: function (str: string, lang: string) {
       if (lang && hljs.getLanguage(lang)) {
         try {
-          const highlightedCode = hljs.highlight(str, { language: lang }).value;
-          return highlightedCode;
-        } catch (__) { }
+          return hljs.highlight(str, { language: lang }).value;
+        } catch (_) { /* 忽略高亮异常 */ }
       }
       return '';
     },
   })
-    .use(tab, {
-      name: tabsName,
-    })
+    .use(tab, { name: tabsName })
     .use(markdownItAnchor, {
       permalink: true,
       permalinkBefore: false,
       permalinkSymbol: '#',
-      slugify: uslugify,
+      slugify,
     })
     .use(markdownItTOC, {
-      callback: (_html: string, ast: any) => {
-        if (anchor.length) {
-          return;
+      callback: (_html: string, ast: { c?: RawAnchorNode[] }) => {
+        if (!rawAnchors.length && ast.c) {
+          rawAnchors = ast.c;
         }
-        anchor = ast.c;
       },
     })
     .use(mila, {
@@ -68,45 +85,22 @@ function renderMarkdown(content: string) {
       },
       attrs: {
         target: "_blank",
-        rel: "noopener", // 增加此属性可提升安全性
+        rel: "noopener",
       },
     })
-    .use(alert, {
-      titleRender: renderAlert
-    })
+    .use(alert, { titleRender: renderAlert })
     .use(katex, {
-      strict: false,      // 👈 必须加这个！允许中文
-      throwOnError: false // 👈 建议加上，防止报错导致整个页面崩溃
+      strict: false,
+      throwOnError: false,
     });
-  ;
 
-  const info = MD.render(content);
-  setTimeout(() => {
-    renderTab();
-  }, 10)
-
-  const format = (data: Array<any>) => {
-    if (!data) {
-      return []
-    }
-
-    return data.map((item): AnchorItem => {
-      const obj = {
-        href: uslugify(item.n.trim()),
-        title: item.n.trim(),
-        children: format(item.c),
-        nodeName: `H${item.l}`,
-        nodeTitle: `<h${item.l}>${item.n.trim()}</h${item.l}>`
-      };
-      delete item.c;
-      return obj;
-    });
-  };
+  const info = md.render(content);
+  setTimeout(() => renderTab(), 10);
 
   return {
-    anchor: format(clonedeep(anchor)),
+    anchor: formatAnchors(clonedeep(rawAnchors)),
     info,
-  }
+  };
 }
 
 
@@ -116,7 +110,7 @@ function renderMarkdown(content: string) {
  */
 export function initHighlighter(languages: Record<string, any> | null | undefined) {
   if (!languages || typeof languages !== 'object') {
-    console.warn('[YourComponent] initHighlighter 需要传入一个语言包对象');
+    console.warn('[render-markdown] initHighlighter 需要传入一个语言包对象');
     return;
   }
 

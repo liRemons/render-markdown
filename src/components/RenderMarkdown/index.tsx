@@ -1,13 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { CopyFilled, CaretRightOutlined, CaretDownOutlined } from '@ant-design/icons';
-import { createRoot } from 'react-dom/client';
+import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
 import CustomBackTop from '@/components/CustomBackTop';
 import Empty from '@/components/Empty';
-import { copy, dateFormat } from 'methods-r';
+import { copy } from 'methods-r';
 import renderMarkdown from './utils/render-markdown';
 import './markdown.global.less';
 import './index.global.less';
+
+/** 记录 initCodeClassName 中为每个 <pre> 创建的 React Root，防止内存泄漏 */
+const codeRootMap = new Map<HTMLElement, Root>();
+
+/**
+ * 代码折叠/展开切换组件
+ */
+function CodeToggle({ preNode }: { preNode: HTMLElement }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  return (
+    <span className="code-toggle" onClick={() => {
+      setIsCollapsed(!isCollapsed);
+      if (isCollapsed) {
+        preNode.classList.remove('code-collapsed');
+      } else {
+        preNode.classList.add('code-collapsed');
+      }
+    }}>
+      {isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
+    </span>
+  );
+}
 
 
 export interface RenderMarkdownProps {
@@ -15,10 +37,6 @@ export interface RenderMarkdownProps {
    * Markdown 内容
    */
   content: string;
-  /**
-  * 创建时间
-  */
-  createTime?: string;
   /**
   * 是否显示返回顶部
   */
@@ -36,9 +54,9 @@ export interface RenderMarkdownProps {
   */
   codeType?: string;
   /**
-  * 显示编辑按钮
+  * 自定义底部内容
   */
-  editButton?: React.ReactNode;
+  footer?: React.ReactNode;
   /**
    * 返回顶部所依赖的容器
    * HTMLElement
@@ -95,21 +113,9 @@ const initCodeClassName = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'i
         customMessage.success('复制成功');
       }
     }}><CopyFilled /></span>
-    const root = createRoot(handleDOM)
+    const root = codeRootMap.get(handleDOM) || createRoot(handleDOM)
+    codeRootMap.set(handleDOM, root)
 
-    function CodeToggle() {
-      const [isCollapsed, setIsCollapsed] = useState(false);
-      return <span className="code-toggle" onClick={() => {
-        setIsCollapsed(!isCollapsed);
-        if (isCollapsed) {
-          preNode?.classList.remove('code-collapsed');
-        } else {
-          preNode?.classList.add('code-collapsed');
-        }
-      }}>
-        {isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
-      </span>
-    }
     root.render(<>
       <span>
         {codeTypeDOM}
@@ -117,7 +123,7 @@ const initCodeClassName = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'i
       {
         !isPrintPreview && <span>
           {copyDOM}
-          {isShowCollapsed && <CodeToggle />}
+          {isShowCollapsed && <CodeToggle preNode={preNode} />}
         </span>
       }
     </>)
@@ -127,23 +133,22 @@ const initCodeClassName = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'i
 export default function RenderMarkdown(props: RenderMarkdownProps) {
   const {
     content,
-    createTime,
     showBackTop,
-    isSlotMermaid = true,
-    codeType,
-    editButton,
+    footer,
     backTopTarget = document.body,
-    showDriverGuide,
-    isPrintPreview = false,
-    defaultCollapsed = true,
-    chartConfig 
   } = props;
   const [html, setHtml] = useState('');
+
+  // 用 ref 存储最新 props，避免 useEffect 闭包陈旧问题
+  const propsRef = useRef(props);
+  propsRef.current = props;
+
   useEffect(() => {
-    let timer = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     // 异步初始化
     const init = async () => {
+      const { codeType, isSlotMermaid, showDriverGuide, isPrintPreview, defaultCollapsed, chartConfig } = propsRef.current;
       // 注册默认支持的语言列表
       if (!codeType || codeType?.toLocaleLowerCase() === 'md') {
         setHtml(renderMarkdown(content)?.info);
@@ -153,7 +158,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       }
 
       timer = setTimeout(async () => {
-        initCodeClassName(props);
+        initCodeClassName(propsRef.current);
         if (isSlotMermaid) {
           // DOM 更新完毕 1s 后渲染 Mermaid, 牺牲 cls 换取首屏加载速度
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
@@ -165,8 +170,10 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     init();
 
     return () => {
-      timer = null
-      clearTimeout(timer!)
+      if (timer) clearTimeout(timer);
+      // 卸载所有旧的 React Root，防止内存泄漏
+      codeRootMap.forEach((root) => root.unmount());
+      codeRootMap.clear();
     }
   }, [content])
 
@@ -176,17 +183,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
         html ?
           <div className='markdown-html'>
             <div style={{ width: '100%' }} dangerouslySetInnerHTML={{ __html: html }} />
-            <div className="markdown-footer">
-              {
-                createTime && <div className="create-time">
-                  文档更新于 {dateFormat(createTime, 'yyyy/MM/dd HH:mm:ss')}
-                </div>
-              }
-              &nbsp;
-              {
-                editButton
-              }
-            </div>
+            {footer && <div className="markdown-footer">{footer}</div>}
           </div>
           : <Empty />
       }
