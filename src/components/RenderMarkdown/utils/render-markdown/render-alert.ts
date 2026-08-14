@@ -24,6 +24,7 @@ function renderAlert(tokens: Array<{ markup: string }>, index: number): string {
     }
 
     return `<p class="markdown-alert-title">
+        <i class="markdown-alert-icon iconfont icon-${token.markup as keyof AlertTypeMap}"></i>
         ${typeMap[token.markup as keyof AlertTypeMap]}
     </p>`
 }
