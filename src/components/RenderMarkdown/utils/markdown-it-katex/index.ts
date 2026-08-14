@@ -40,24 +40,44 @@ export function katexPlugin(md: any, options: KatexPluginOptions = {}): void {
         return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // ========== 行内 $...$ ==========
-    md.inline.ruler.after('escape', 'katex_inline', (state: any, silent: any) => {
-        if (state.src[state.pos] !== '$') return false;
-        if (state.src[state.pos + 1] === '$') return false; // $$ 留给块级
+    md.inline.ruler.before('emphasis', 'katex_inline', (state: any, silent: any) => {
+        // 1. 当前位置必须是 $
+        if (state.src.charCodeAt(state.pos) !== 0x24 /* $ */) return false;
 
-        const start = state.pos + 1;
-        let end = start;
+        // 2. 排除 $$ （留给块级）
+        if (state.src.charCodeAt(state.pos + 1) === 0x24) return false;
+
+        // 3. 排除 \$ 转义
+        if (state.pos > 0 && state.src.charCodeAt(state.pos - 1) === 0x5c /* \ */) {
+            return false;
+        }
+
+        // 4. $ 后不能是空格（KaTeX 规范）
+        const afterOpen = state.pos + 1;
+        if (afterOpen >= state.posMax) return false;
+        if (/\s/.test(state.src[afterOpen])) return false;
+
+        // 5. 查找配对的结束 $
+        let end = afterOpen;
         while (end < state.posMax) {
-            if (state.src[end] === '$' && state.src[end - 1] !== '\\') break;
+            const ch = state.src.charCodeAt(end);
+            if (ch === 0x24 /* $ */ && state.src.charCodeAt(end - 1) !== 0x5c /* \ */) {
+                break;
+            }
             end++;
         }
-        if (end >= state.posMax || end === start) return false;
+
+        // 6. 没找到配对 / 空内容 / 结束符前是空格 → 不匹配
+        if (end >= state.posMax) return false;
+        if (end === afterOpen) return false;
+        if (/\s/.test(state.src[end - 1])) return false;
 
         if (!silent) {
             const token = state.push('katex_inline', 'math', 0);
             token.markup = '$';
-            token.content = state.src.slice(start, end);
+            token.content = state.src.slice(afterOpen, end);
         }
+
         state.pos = end + 1;
         return true;
     });
