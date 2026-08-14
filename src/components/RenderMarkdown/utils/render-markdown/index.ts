@@ -6,10 +6,9 @@ import clonedeep from 'lodash.clonedeep'
 import hljs from 'highlight.js/lib/core';
 import { tab } from "@mdit/plugin-tab";
 import { alert } from "@mdit/plugin-alert";
-import katex from '@vscode/markdown-it-katex';
 import renderAlert from './render-alert';
 import renderTab, { tabsName } from './render-tab';
-
+import { ensureKatexLoaded, katexPlugin } from '../markdown-it-katex';
 // ==================== 工具函数 ====================
 
 /** 轻量级 slugify，替代 uslug */
@@ -51,7 +50,9 @@ function formatAnchors(data: RawAnchorNode[]): AnchorItem[] {
 
 // ==================== 核心渲染 ====================
 
-function renderMarkdown(content: string) {
+async function renderMarkdown(content: string) {
+  
+  await ensureKatexLoaded();
   let rawAnchors: RawAnchorNode[] = [];
 
   const md = new markdownIt({
@@ -89,14 +90,16 @@ function renderMarkdown(content: string) {
         rel: "noopener",
       },
     })
-    .use(alert, { titleRender: renderAlert })
-    .use(katex, {
+    .use(alert, { titleRenderer: renderAlert })
+    .use(katexPlugin, {
       strict: false,
       throwOnError: false,
     });
 
   const info = md.render(content);
-  requestAnimationFrame(() => renderTab());
+  setTimeout(() => {
+    requestAnimationFrame(() => renderTab());
+  }, 0);
 
   return {
     anchor: formatAnchors(clonedeep(rawAnchors)),

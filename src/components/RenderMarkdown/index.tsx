@@ -16,14 +16,14 @@ const codeRootMap = new Map<HTMLElement, Root>();
  * 代码折叠/展开切换组件
  */
 function CodeToggle({ preNode }: { preNode: HTMLElement }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const handleClick = () => {
     setIsCollapsed(!isCollapsed);
     preNode.classList.toggle('code-collapsed', isCollapsed);
   };
   return (
     <span className="code-toggle" onClick={handleClick}>
-      {isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
+      {isCollapsed ? <CaretDownOutlined /> : <CaretRightOutlined />}
     </span>
   );
 }
@@ -148,10 +148,12 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       const { codeType, isSlotMermaid, showDriverGuide, isPrintPreview, defaultCollapsed, chartConfig } = propsRef.current;
       // 注册默认支持的语言列表
       if (!codeType || codeType?.toLocaleLowerCase() === 'md') {
-        setHtml(renderMarkdown(content)?.info);
+        const markdownInfo = await renderMarkdown(content);
+        setHtml(markdownInfo?.info);
       } else {
         const text = '```' + codeType + '\n' + content + '\n```'
-        setHtml(renderMarkdown(text)?.info);
+        const markdownInfo = await renderMarkdown(text);
+        setHtml(markdownInfo?.info);
       }
 
       timer = setTimeout(async () => {
