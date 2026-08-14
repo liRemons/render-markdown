@@ -147,14 +147,15 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     const init = async () => {
       const { codeType, isSlotMermaid, showDriverGuide, isPrintPreview, defaultCollapsed, chartConfig } = propsRef.current;
       // 注册默认支持的语言列表
+      let text = ''
       if (!codeType || codeType?.toLocaleLowerCase() === 'md') {
-        const markdownInfo = await renderMarkdown(content);
-        setHtml(markdownInfo?.info);
+        text = content;
       } else {
-        const text = '```' + codeType + '\n' + content + '\n```'
-        const markdownInfo = await renderMarkdown(text);
-        setHtml(markdownInfo?.info);
+        text = '```' + codeType + '\n' + content + '\n```'
       }
+
+      const markdownInfo = await renderMarkdown(text);
+      setHtml(markdownInfo?.info);
 
       timer = setTimeout(async () => {
         initCodeToolbars(propsRef.current);

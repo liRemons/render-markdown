@@ -31,6 +31,7 @@ export function getDriverConfig(showSourceView: boolean, hasSvg: boolean) {
         { element: '.docList-menu-copyHtml', popover: { title: '复制', description: '点击此处您可复制 HTML 渲染的格式内容' } },
         { element: '.docList-menu-copyMarkdown', popover: { title: '复制', description: '点击此处您可复制 markdown 源码' } },
         { element: '.docList-menu-print', popover: { title: '打印', description: '点击此处您可跳转至打印页面，输出为PDF' } },
+        { element: '.docList-menu-mermaid-collapse', popover: { title: '展开收起mermaid', description: '点击此处按钮可一键展开收起mermaid图表' }, isShow: hasSvg },
       ]
     },
     {
@@ -41,12 +42,11 @@ export function getDriverConfig(showSourceView: boolean, hasSvg: boolean) {
       },
       onOpen: () => { localStorage[mermaidDriverKey] = '1'; },
       steps: [
-        { element: '.mermaid-react-root .mermaid-mini', popover: { title: 'mermaid', description: '恭喜您解锁 Mermaid 渲染图表' } },
-        { element: '.docList-menu-mermaid-collapse', popover: { title: '展开收起mermaid', description: '点击此处按钮可一键展开收起mermaid图表' }, isShow: hasSvg },
-        { element: '.mermaid-react-root .mermaid-mini .mermaid-minimize-btn', popover: { title: '缩略图', description: '点击此处按钮可查看缩略图' } },
-        { element: '.mermaid-react-root .mermaid-mini .mermaid-fullscreen-btn', popover: { title: '全屏', description: '点击此处按钮可切换为全屏展示' } },
-        { element: '.mermaid-react-root .mermaid-mini .mermaid-showcode-btn', popover: { title: '源码', description: '点击此处按钮查看源码弹窗' } },
-        { element: '.mermaid-react-root .mermaid-mini .mermaid-collapsed-btn', popover: { title: '展开', description: '点击此处按钮展开大图' } },
+        { element: '.mermaid-react-root', popover: { title: 'mermaid', description: '恭喜您解锁 Mermaid 渲染图表' } },
+        { element: '.mermaid-react-root .mermaid-minimize-btn', popover: { title: '缩略图', description: '点击此处按钮可查看缩略图' } },
+        { element: '.mermaid-react-root .mermaid-fullscreen-btn', popover: { title: '全屏', description: '点击此处按钮可切换为全屏展示' } },
+        { element: '.mermaid-react-root .mermaid-showcode-btn', popover: { title: '源码', description: '点击此处按钮查看源码弹窗' } },
+        { element: '.mermaid-react-root .mermaid-collapsed-btn', popover: { title: '展开', description: '点击此处按钮展开大图' } },
       ]
     }
   ];
