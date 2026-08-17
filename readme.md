@@ -177,9 +177,9 @@ graph TD
 ```tsx
 import { markdownFormat } from 'remons-render-markdown';
 
-function TableOfContents() {
+async function TableOfContents() {
   const content = '# 标题1\n## 标题1.1\n## 标题1.2\n# 标题2';
-  const { anchor, info } = markdownFormat(content);
+  const { anchor, info } = await markdownFormat(content);
   
   console.log(anchor); 
   // [

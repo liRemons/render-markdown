@@ -105,9 +105,9 @@
   blockquote {
     margin: 6px 0;
     padding: 4px 6px;
-    color: var(--color-text-secondary, #57606a);
-    background: var(--color-bg-card, #f6f8fa);
-    border-left: 4px solid var(--color-border-dark, #d0d7de);
+    color: var(--remons-markdown-color-text-secondary, #57606a);
+    background: var(--remons-markdown-color-bg-card, #f6f8fa);
+    border-left: 4px solid var(--remons-markdown-color-border-dark, #d0d7de);
     border-radius: 0 6px 6px 0;
 
     p:last-child {
@@ -125,14 +125,14 @@
     max-width: 100%;
     margin: 10px 0;
     overflow: auto;
-    border: 1px solid var(--color-border-dark, #d0d7de);
+    border: 1px solid var(--remons-markdown-color-border-dark, #d0d7de);
     border-spacing: 0;
     border-collapse: separate;
     border-radius: 6px;
     display: inline-block;
 
     thead {
-      background-color: var(--color-bg-card, #f6f8fa);
+      background-color: var(--remons-markdown-color-bg-card, #f6f8fa);
       text-align: left;
       vertical-align: bottom;
     }
@@ -140,8 +140,8 @@
     td,
     th {
       padding: 2px 6px;
-      border-right: 1px solid var(--color-border-dark, #d0d7de);
-      border-bottom: 1px solid var(--color-border-dark, #d0d7de);
+      border-right: 1px solid var(--remons-markdown-color-border-dark, #d0d7de);
+      border-bottom: 1px solid var(--remons-markdown-color-border-dark, #d0d7de);
       font-size: 13px;
       line-height: 22px;
       min-width: 56px;
@@ -159,13 +159,13 @@
 
 
   .markdown-html {
-    color: var(--color-text-primary, #24292f);
+    color: var(--remons-markdown-color-text-primary, #24292f);
 
     .header-anchor {
       opacity: 0;
       transition: opacity 0.2s ease-in-out;
       text-decoration: none;
-      color: var(--color-text-placeholder, #999);
+      color: var(--remons-markdown-color-text-placeholder, #999);
     }
 
     h1:hover .header-anchor,
@@ -238,7 +238,7 @@
       >span {
         display: inline-flex;
         align-items: center;
-        font-family: var(--font-family-editor);
+        font-family: var(--remons-markdown-font-family-editor);
       }
 
       img {
@@ -270,7 +270,7 @@
   }
 
   a {
-    color: var(--color-text-primary, #222);
+    color: var(--remons-markdown-color-text-primary, #222);
   }
 }
 

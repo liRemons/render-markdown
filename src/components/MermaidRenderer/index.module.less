@@ -6,9 +6,9 @@
   height: 100%;
   overflow: hidden;
   position: relative;
-  background: var(--color-bg-card, #f8f9fa);
+  background: var(--remons-markdown-color-bg-card, #f8f9fa);
   cursor: grab;
-  border-radius: var(--radius-base);
+  border-radius: var(--remons-markdown-radius-base);
 
   &:active {
     cursor: grabbing;
@@ -46,7 +46,7 @@
     max-width: 100%;
     max-height: 100%;
     display: block;
-    font-family: var(--font-family-base) !important;
+    font-family: var(--remons-markdown-font-family-base) !important;
   }
 }
 
@@ -54,7 +54,7 @@
 .errorTip {
   padding: 8px 12px;
   font-size: 12px;
-  color: var(--color-danger, #ef4444);
+  color: var(--remons-markdown-color-danger, #ef4444);
   background: #fef2f2;
   border-bottom: 1px solid #fee2e2;
   flex-shrink: 0;
@@ -70,7 +70,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-light, #9ca3af);
+  color: var(--remons-markdown-color-text-light, #9ca3af);
   font-size: 14px;
   pointer-events: none;
 }
@@ -86,10 +86,10 @@
   .mermaid-wrapper,
   .mermaid-loading {
     overflow: hidden;
-    background-color: var(--color-bg-card, #f8f9fa);
+    background-color: var(--remons-markdown-color-bg-card, #f8f9fa);
     border-radius: 8px;
     position: relative;
-    border: 1px solid var(--color-border, #e4e4e4);
+    border: 1px solid var(--remons-markdown-color-border, #e4e4e4);
     box-sizing: border-box;
     transition: all 0.3s ease-in-out;
 
@@ -100,6 +100,7 @@
     .mermaid-content.disabled-move {
       cursor: initial !important;
     }
+
     &.print-preview {
       background-color: transparent;
     }
@@ -115,9 +116,13 @@
         height: 28px;
         pointer-events: none;
         content: "";
-        background: linear-gradient(to bottom, transparent, var(--color-bg, #ebebeb));
+        background: linear-gradient(to bottom, transparent, var(--remons-markdown-color-bg, #ebebeb));
       }
     }
+  }
+
+  .mermaid-wrapper-fullscreen {
+    background: var(--remons-markdown-bg-gradient);
   }
 
   .mermaid-loading {
@@ -192,7 +197,7 @@
   }
 
   .mermaid-fullscreen-target:fullscreen {
-    background: var(--color-bg-white, #fff);
+    background: var(--remons-markdown-color-bg-white, #fff);
     width: 100vw;
     height: 100vh;
     overflow: hidden;

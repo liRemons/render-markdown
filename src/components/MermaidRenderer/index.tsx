@@ -152,6 +152,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
       ref={wrapperRef}
       className={
         classNames.bind(style)(
+          isFullscreen ? "mermaid-wrapper-fullscreen" : "",
           showCollapse ? "mermaid-wrapper" : "",
           isCollapsed && showCollapse && !isMinimize ? "mermaid-collapsed" : "",
           className,

@@ -28,27 +28,27 @@
   line-height: 40px;
   height: 40px;
   border-radius: 100% !important;
-  background-color: var(--color-bg);
+  background-color: var(--remons-markdown-color-bg);
   padding: 0;
   text-align: center;
   margin-right: 5px;
   display: inline-block;
-  box-shadow: var(--shadow-sm) !important;
+  box-shadow: var(--remons-markdown-shadow-sm) !important;
   transition: shadow 0.2s ease-in-out;
 
   &:hover {
-    box-shadow: -2px -2px 5px var(--color-shadow-light),
-      2px 2px 5px var(--color-shadow) !important;
+    box-shadow: -2px -2px 5px var(--remons-markdown-color-shadow-light),
+      2px 2px 5px var(--remons-markdown-color-shadow) !important;
   }
 
   &:active {
-    box-shadow: var(--shadow-inset) !important;
+    box-shadow: var(--remons-markdown-shadow-inset) !important;
   }
 }
 
 @media screen and (max-width: 500px) {
   .remons-markdown-circle {
-    box-shadow: -2px -2px 10px var(--color-shadow-light),
-      2px 2px 10px var(--color-shadow) !important;
+    box-shadow: -2px -2px 10px var(--remons-markdown-color-shadow-light),
+      2px 2px 10px var(--remons-markdown-color-shadow) !important;
   }
 }
