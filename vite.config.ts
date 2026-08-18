@@ -36,7 +36,7 @@ export default defineConfig({
         moduleSideEffects: (id: string) => /\.(css|less)$/.test(id),
         propertyReadSideEffects: false,
       },
-      external: ['react', 'react-dom', 'antd', '@ant-design/icons', 'highlight.js', /^highlight\.js\/.*/, 'react/jsx-runtime'],
+      external: ['react', 'react-dom', 'antd', '@ant-design/icons', 'highlight.js', /^highlight\.js\/.*/, 'react/jsx-runtime', 'markdown-it'],
       output: {
         format: 'es',
         esModule: true,
@@ -46,7 +46,8 @@ export default defineConfig({
           antd: 'antd',
           '@ant-design/icons': 'Icons',
           'highlight.js': 'hljs',
-          'react/jsx-runtime': 'jsxRuntime'
+          'react/jsx-runtime': 'jsxRuntime',
+          'markdown-it': 'markdownit'
         },
         assetFileNames: 'index.css',
       },
