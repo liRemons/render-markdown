@@ -12,6 +12,9 @@ import './index.global.less';
 /** 记录 initCodeToolbars 中为每个 <pre> 创建的 React Root，防止内存泄漏 */
 const codeRootMap = new Map<HTMLElement, Root>();
 
+/** Mermaid 渲染防抖延迟（ms）。content 停止变化超过该时间后才统一渲染图表，避免 SSE 打字机过程中闪烁 */
+const MERMAID_DEBOUNCE = 800;
+
 /**
  * 代码折叠/展开切换组件
  */
@@ -141,44 +144,55 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   propsRef.current = props;
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    let toolbarMermaidTimer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
 
-    // 异步初始化
+    // 异步初始化：markdown 文本立即渲染（保证打字机效果），
+    // 代码工具栏 + Mermaid 图表防抖延迟渲染（避免 SSE 流式过程中重复 hack 导致闪烁）
     const init = async () => {
-      const { codeType, isSlotMermaid, showDriverGuide, isPrintPreview, defaultCollapsed, chartConfig } = propsRef.current;
-      // 注册默认支持的语言列表
-      let text = ''
+      const { codeType } = propsRef.current;
+      let text = '';
       if (!codeType || codeType?.toLocaleLowerCase() === 'md') {
         text = content;
       } else {
-        text = '```' + codeType + '\n' + content + '\n```'
+        text = '```' + codeType + '\n' + content + '\n```';
       }
 
       const markdownInfo = await renderMarkdown(text);
+      if (cancelled) return; // content 已变化，丢弃过期结果
       setHtml(markdownInfo?.info);
 
-      timer = setTimeout(async () => {
+      // 防抖：content 停止变化 MERMAID_DEBOUNCE ms 后才统一渲染代码工具栏和 Mermaid。
+      // - SSE 打字机过程中 content 持续变化，timer 会被反复重置，不会触发 mermaid hack
+      // - 只有当 content 稳定（流结束或暂停）后才会扫描并渲染图表
+      // - 此时 mermaid 源码通常已完整，避免对不完整源码的渲染
+      toolbarMermaidTimer = setTimeout(async () => {
+        if (cancelled) return;
         initCodeToolbars(propsRef.current);
+
+        const { isSlotMermaid, showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed } = propsRef.current;
         if (isSlotMermaid) {
-          // DOM 更新完毕 1s 后渲染 Mermaid, 牺牲 cls 换取首屏加载速度
+          // DOM 稳定后统一渲染 Mermaid
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
           await renderMermaid({ showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed });
         }
-      }, 10);
+      }, MERMAID_DEBOUNCE);
     };
 
     init();
 
     return () => {
-      if (timer) clearTimeout(timer);
-      // 卸载所有旧的 React Root，防止内存泄漏
+      cancelled = true;
+      if (toolbarMermaidTimer) clearTimeout(toolbarMermaidTimer);
+
+      // 卸载代码工具栏 React Root
       codeRootMap.forEach((root, handleDOM) => {
         root.unmount();
         handleDOM.remove();
       });
       codeRootMap.clear();
-    }
-  }, [content])
+    };
+  }, [content]);
 
   return (
     <div className='markdown'>
