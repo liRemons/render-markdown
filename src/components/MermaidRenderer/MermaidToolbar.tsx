@@ -4,7 +4,7 @@ import {
   FullscreenOutlined, FullscreenExitOutlined,
   DownloadOutlined, ReloadOutlined, CodeOutlined,
   UpOutlined, DownOutlined,
-  ImportOutlined, ExportOutlined
+  ImportOutlined, ExportOutlined, DragOutlined
 } from '@ant-design/icons';
 import CustomTooltip from '@/components/CustomTooltip';
 import CustomDropdown from '@/components/CustomDropdown';
@@ -30,6 +30,9 @@ interface MermaidToolbarProps {
   isCollapsed: boolean;
   isMinimize: boolean;
   isPanzoomActive: boolean;
+  isPanzoomAvailable: boolean;
+  isPanzoomEnabled: boolean;
+  setIsPanzoomEnabled: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsMinimize: (value: boolean | ((prev: boolean) => boolean)) => void;
   setIsCollapsed: (value: boolean | ((prev: boolean) => boolean)) => void;
   setShowSource: (value: boolean) => void;
@@ -53,6 +56,9 @@ export default function MermaidToolbar({
   isCollapsed,
   isMinimize,
   isPanzoomActive,
+  isPanzoomAvailable,
+  isPanzoomEnabled,
+  setIsPanzoomEnabled,
   setIsMinimize,
   setIsCollapsed,
   setShowSource,
@@ -67,6 +73,13 @@ export default function MermaidToolbar({
       tooltip: isMinimize ? '缩略图' : '最小化',
       onClick: () => setIsMinimize((prev: boolean) => !prev),
       className: 'mermaid-minimize-btn',
+    },
+    {
+      isShow: isPanzoomAvailable,
+      icon: <DragOutlined />,
+      tooltip: isPanzoomEnabled ? '取消拖拽' : '启用拖拽',
+      onClick: () => setIsPanzoomEnabled((prev: boolean) => !prev),
+      className: isPanzoomEnabled ? 'mermaid-panzoom-btn active' : 'mermaid-panzoom-btn',
     },
     {
       isShow: isPanzoomActive,

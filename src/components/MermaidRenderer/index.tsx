@@ -98,6 +98,8 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
     setShowSource,
     isMinimize,
     setIsMinimize,
+    isPanzoomEnabled,
+    setIsPanzoomEnabled,
     toggleFullscreen,
   } = useMermaidControls({
     showCollapse,
@@ -110,7 +112,8 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
     wrapperRef,
   });
 
-  const isPanzoomActive = enablePanzoom && (isFullscreen || !isCollapsed || !showCollapse);
+  const isPanzoomAvailable = enablePanzoom && (isFullscreen || !isCollapsed || !showCollapse);
+  const isPanzoomActive = isPanzoomAvailable && isPanzoomEnabled;
   const panzoomRef = usePanzoom({
     contentRef, wrapperRef,
     enabled: isPanzoomActive && !!svg && !isPrintPreview,
@@ -180,6 +183,9 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
             isCollapsed={isCollapsed}
             isMinimize={isMinimize}
             isPanzoomActive={isPanzoomActive}
+            isPanzoomAvailable={isPanzoomAvailable}
+            isPanzoomEnabled={isPanzoomEnabled}
+            setIsPanzoomEnabled={setIsPanzoomEnabled}
             setIsMinimize={setIsMinimize}
             setIsCollapsed={setIsCollapsed}
             setShowSource={setShowSource}
@@ -197,7 +203,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
       {error && <div className={style.errorTip}>⚠️ {error}</div>}
 
       {/* 预览区域 */}
-      <div className={style.previewArea} style={{ minHeight: hasDiagram ? "auto" : minHeight }}>
+      <div className={`${style.previewArea} ${!isPanzoomActive ? style.previewAreaDisabled : ''}`} style={{ minHeight: hasDiagram ? "auto" : minHeight }}>
         <div
           ref={contentRef}
           className={style.previewContent}

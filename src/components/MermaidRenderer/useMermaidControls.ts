@@ -25,6 +25,7 @@ export default function useMermaidControls({
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [showSource, setShowSource] = useState(false);
   const [isMinimize, setIsMinimize] = useState(showSourceView);
+  const [isPanzoomEnabled, setIsPanzoomEnabled] = useState(false);
 
   // 打印模式下自动展开
   useEffect(() => {
@@ -64,6 +65,8 @@ export default function useMermaidControls({
     setShowSource,
     isMinimize,
     setIsMinimize,
+    isPanzoomEnabled,
+    setIsPanzoomEnabled,
     toggleFullscreen,
   };
 }

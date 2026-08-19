@@ -12,8 +12,8 @@ import './index.global.less';
 /** 记录 initCodeToolbars 中为每个 <pre> 创建的 React Root，防止内存泄漏 */
 const codeRootMap = new Map<HTMLElement, Root>();
 
-/** Mermaid 渲染防抖延迟（ms）。content 停止变化超过该时间后才统一渲染图表，避免 SSE 打字机过程中闪烁 */
-const MERMAID_DEBOUNCE = 800;
+/** Mermaid 渲染防抖延迟（ms）默认值。content 停止变化超过该时间后才统一渲染图表，避免 SSE 打字机过程中闪烁 */
+const DEFAULT_MERMAID_DEBOUNCE = 10;
 
 /**
  * 代码折叠/展开切换组件
@@ -79,11 +79,15 @@ export interface RenderMarkdownProps {
   * 默认是否折叠代码
   */
   defaultCollapsed?: boolean;
+  /**
+  * Mermaid 渲染防抖延迟（ms），默认 10ms
+  */
+  mermaidDebounce?: number;
 }
 
 
 const initCodeToolbars = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'isShowCollapsed' | 'isPrintPreview'>) => {
-  const { isSlotMermaid = true, isShowCollapsed = true, isPrintPreview = false } = props;
+  const { isSlotMermaid = true, isShowCollapsed = true } = props;
   document.querySelectorAll('.markdown-html code[class*="language-"]').forEach((item) => {
     const codeType = item.className.replace('language-', '').trim();
     const slotMermaidClassName = (isSlotMermaid && codeType === 'mermaid') ? 'mermaid-render-noCode' : ''
@@ -120,12 +124,10 @@ const initCodeToolbars = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'is
       <span>
         {codeTypeDOM}
       </span>
-      {
-        !isPrintPreview && <span>
-          {copyDOM}
-          {isShowCollapsed && <CodeToggle preNode={preNode} />}
-        </span>
-      }
+      <span className="code-handle">
+        {copyDOM}
+        {isShowCollapsed && <CodeToggle preNode={preNode} />}
+      </span>
     </>)
   });
 };
@@ -136,6 +138,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     showBackTop,
     footer,
     backTopTarget = document.body,
+    mermaidDebounce,
   } = props;
   const [html, setHtml] = useState('');
 
@@ -176,7 +179,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
           await renderMermaid({ showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed });
         }
-      }, MERMAID_DEBOUNCE);
+      }, mermaidDebounce ?? DEFAULT_MERMAID_DEBOUNCE);
     };
 
     init();
