@@ -110,7 +110,7 @@ const initCodeToolbars = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'is
         customMessage.success('复制成功');
       }
     }}><CopyFilled /></span>
-    const root = codeRootMap.get(handleDOM) || createRoot(handleDOM)
+    const root = createRoot(handleDOM)
     codeRootMap.set(handleDOM, root)
 
     root.render(<>
@@ -172,7 +172,10 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     return () => {
       if (timer) clearTimeout(timer);
       // 卸载所有旧的 React Root，防止内存泄漏
-      codeRootMap.forEach((root) => root.unmount());
+      codeRootMap.forEach((root, handleDOM) => {
+        root.unmount();
+        handleDOM.remove();
+      });
       codeRootMap.clear();
     }
   }, [content])
