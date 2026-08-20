@@ -38,3 +38,4 @@ declare module 'highlight.js/lib/languages/css';
 declare module 'highlight.js/lib/languages/plaintext';
 declare module 'highlight.js/lib/languages/less';
 declare module 'highlight.js/lib/languages/typescript';
+declare module 'markdown-it-task-lists';

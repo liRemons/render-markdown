@@ -6,6 +6,7 @@ import clonedeep from 'lodash.clonedeep'
 import hljs from 'highlight.js/lib/core';
 import { tab } from "@mdit/plugin-tab";
 import { alert } from "@mdit/plugin-alert";
+import taskList from 'markdown-it-task-lists';
 import renderAlert from './render-alert';
 import renderTab, { tabsName } from './render-tab';
 import { ensureKatexLoaded, katexPlugin } from '../markdown-it-katex';
@@ -94,7 +95,8 @@ async function renderMarkdown(content: string) {
     .use(katexPlugin, {
       strict: false,
       throwOnError: false,
-    });
+    })
+    .use(taskList);
 
   const info = md.render(content);
   setTimeout(() => {
