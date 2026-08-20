@@ -19,10 +19,14 @@ interface UseMermaidRenderParams {
    * @returns 
    */
   chartConfig?: (text: string) => string;
+  /**
+   * 自定义 CDN 配置，如 { mermaid: 'https://...' }
+   */
+  cdn?: Record<string, string>;
 }
 
-export default function useMermaidRender({ source, debounceMs = 300, isDark, chartConfig }: UseMermaidRenderParams) {
-  const { mermaid, loading } = useLoadMermaid();
+export default function useMermaidRender({ source, debounceMs = 300, isDark, chartConfig, cdn }: UseMermaidRenderParams) {
+  const { mermaid, loading } = useLoadMermaid(cdn);
   const [svg, setSvg] = useState("");
   const [error, setError] = useState("");
   const renderSeqRef = useRef(0);

@@ -1,9 +1,9 @@
-import cdn from './cdn';
+import defaultCdn from './cdn';
 
-export const jsMap: Record<string, string> = cdn.reduce((acc, item) => {
-  acc[item.externalsName] = item.url;
-  return acc;
-}, {} as Record<string, string>);
+/**
+ * 获取 jsMap（默认配置）
+ */
+export const jsMap: Record<string, string> = defaultCdn;
 
 const delay = 5000;
 

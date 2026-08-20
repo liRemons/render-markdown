@@ -1,6 +1,6 @@
 // hooks/useLoadMermaid.ts
 import { useState, useEffect } from 'react';
-import { jsMap } from '@/utils/preload';
+import { getCdnUrl } from '@/utils/cdn';
 
 export interface MermaidInstance {
   initialize: (config: Record<string, unknown>) => void;
@@ -15,7 +15,7 @@ declare global {
 
 let mermaidPromise: Promise<MermaidInstance> | null = null;
 
-function loadMermaidScript() {
+function loadMermaidScript(cdn?: Record<string, string>) {
   if (!mermaidPromise) {
     mermaidPromise = new Promise((resolve, reject) => {
       if (window.mermaid) {
@@ -23,7 +23,7 @@ function loadMermaidScript() {
         return;
       }
       const script = document.createElement('script');
-      script.src = jsMap.mermaid;
+      script.src = getCdnUrl('mermaid', cdn);
       script.onload = () => resolve(window.mermaid!);
       script.onerror = () => reject(new Error('Mermaid 脚本加载失败'));
       document.head.appendChild(script);
@@ -32,7 +32,7 @@ function loadMermaidScript() {
   return mermaidPromise;
 }
 
-export default function useLoadMermaid() {
+export default function useLoadMermaid(cdn?: Record<string, string>) {
   const [mermaid, setMermaid] = useState<MermaidInstance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -40,7 +40,7 @@ export default function useLoadMermaid() {
   useEffect(() => {
     let cancelled = false;
 
-    loadMermaidScript()
+    loadMermaidScript(cdn)
       .then((instance) => {
         if (!cancelled) {
           setMermaid(() => instance);

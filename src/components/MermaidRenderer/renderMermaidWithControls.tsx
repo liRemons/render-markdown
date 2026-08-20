@@ -13,11 +13,12 @@ export default async function renderMermaidWithControls(
     isPrintPreview?: boolean;
     chartConfig?: (text: string) => string;
     defaultCollapsed?: boolean;
+    cdn?: Record<string, string>;
   }
 ) {
   const blocks = document.querySelectorAll("code.language-mermaid");
 
-  const { showDriverGuide, isPrintPreview = false, chartConfig, defaultCollapsed = true } = props || {};
+  const { showDriverGuide, isPrintPreview = false, chartConfig, defaultCollapsed = true, cdn } = props || {};
 
   for (const block of blocks) {
     const pre = block.parentElement;
@@ -44,6 +45,7 @@ export default async function renderMermaidWithControls(
             isPrintPreview={isPrintPreview}
             minHeight={200}
             showDriverGuide={showDriverGuide}
+            cdn={cdn}
           />
         </ThemeProvider>
       </React.StrictMode>

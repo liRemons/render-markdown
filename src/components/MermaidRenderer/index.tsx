@@ -67,6 +67,10 @@ interface MermaidRendererProps {
    * @returns 
    */
   chartConfig?: (text: string) => string;
+  /**
+   * 自定义 CDN 配置，如 { mermaid: 'https://...' }
+   */
+  cdn?: Record<string, string>;
 }
 
 // ==================== 统一 Mermaid 渲染组件 ====================
@@ -83,9 +87,10 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   showDriverGuide,
   isPrintPreview = false,
   chartConfig,
+  cdn,
 }) {
   const { isDark } = useTheme();
-  const { svg, error, loading } = useMermaidRender({ source, debounceMs, isDark, chartConfig });
+  const { svg, error, loading } = useMermaidRender({ source, debounceMs, isDark, chartConfig, cdn });
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);

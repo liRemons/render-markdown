@@ -83,6 +83,10 @@ export interface RenderMarkdownProps {
   * Mermaid 渲染防抖延迟（ms），默认 10ms
   */
   mermaidDebounce?: number;
+  /**
+   * 自定义 CDN 配置，如 { mermaid: 'https://...' }
+   */
+  cdn?: Record<string, string>;
 }
 
 
@@ -173,11 +177,11 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
         if (cancelled) return;
         initCodeToolbars(propsRef.current);
 
-        const { isSlotMermaid, showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed } = propsRef.current;
+        const { isSlotMermaid, showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed, cdn } = propsRef.current;
         if (isSlotMermaid) {
           // DOM 稳定后统一渲染 Mermaid
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
-          await renderMermaid({ showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed });
+          await renderMermaid({ showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed, cdn });
         }
       }, mermaidDebounce ?? DEFAULT_MERMAID_DEBOUNCE);
     };
