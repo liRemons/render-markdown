@@ -9,6 +9,7 @@ import { alert } from "@mdit/plugin-alert";
 import taskList from 'markdown-it-task-lists';
 import renderAlert from './render-alert';
 import renderTab, { tabsName } from './render-tab';
+import renderAmap from './render-amap';
 import { ensureKatexLoaded, katexPlugin } from '../markdown-it-katex';
 // ==================== 工具函数 ====================
 
@@ -96,7 +97,8 @@ async function renderMarkdown(content: string) {
       strict: false,
       throwOnError: false,
     })
-    .use(taskList);
+    .use(taskList)
+    .use(renderAmap);
 
   const info = md.render(content);
   setTimeout(() => {

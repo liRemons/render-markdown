@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CopyFilled, CaretRightOutlined, CaretDownOutlined } from '@ant-design/icons';
+import { CopyFilled, CaretRightOutlined, CaretDownOutlined, CopyOutlined, ExportOutlined } from '@ant-design/icons';
 import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
 import CustomBackTop from '@/components/CustomBackTop';
@@ -15,6 +15,44 @@ const codeRootMap = new Map<HTMLElement, Root>();
 
 /** Mermaid 渲染防抖延迟（ms）默认值。content 停止变化超过该时间后才统一渲染图表，避免 SSE 打字机过程中闪烁 */
 const DEFAULT_MERMAID_DEBOUNCE = 10;
+
+/**
+ * 初始化 amap 容器的事件绑定和图标替换
+ */
+const initAmapContainers = () => {
+  document.querySelectorAll('.amap-container').forEach((container) => {
+    // const url = (container as HTMLElement).dataset.url || '';
+    const label = (container as HTMLElement).dataset.label || '';
+    
+    const copyBtn = container.querySelector('.amap-copy-btn');
+    if (copyBtn) {
+      // 替换图标为 Ant Design Icon
+      const iconSpan = copyBtn.querySelector('.amap-icon');
+      if (iconSpan) {
+        const root = createRoot(iconSpan);
+        root.render(<CopyOutlined style={{ fontSize: '16px', color: '#1890ff' }} />);
+      }
+      
+      copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(label).then(() => {
+          customMessage.success('已复制');
+        }).catch(() => {
+          customMessage.error('复制失败');
+        });
+      });
+    }
+
+    const linkBtn = container.querySelector('.amap-link-btn');
+    if (linkBtn) {
+      // 替换图标为 Ant Design Icon
+      const iconSpan = linkBtn.querySelector('.amap-icon');
+      if (iconSpan) {
+        const root = createRoot(iconSpan);
+        root.render(<ExportOutlined style={{ fontSize: '16px', color: '#1890ff' }} />);
+      }
+    }
+  });
+};
 
 /**
  * 代码折叠/展开切换组件
@@ -182,6 +220,9 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
         // 初始化图片工具栏
         const { isPrintPreview } = propsRef.current;
         initImageToolbars(containerRef, isPrintPreview);
+
+        // 初始化 amap 容器事件
+        initAmapContainers();
 
         const { isSlotMermaid, showDriverGuide, chartConfig, defaultCollapsed, cdn } = propsRef.current;
         if (isSlotMermaid) {

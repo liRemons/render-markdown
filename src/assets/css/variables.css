@@ -5,6 +5,7 @@
   /* ── 基础颜色 ── */
   --remons-markdown-color-bg: transparent;
   --remons-markdown-color-bg-card: transparent;
+  --remons-markdown-color-button: rgba(255, 255, 255, 0.15);
   --remons-markdown-color-bg-white: #ffffff;
   --remons-markdown-color-bg-tooltip: #61616141;
 
@@ -27,6 +28,7 @@
   /* ── 边框 ── */
   --remons-markdown-color-border: #dbdada;
   --remons-markdown-color-border-dark: #d0d7de;
+  --remons-markdown-color-button-border: rgba(255, 255, 255, 0.8);
 
   /* ── 字体 ── */
   --remons-markdown-font-family-base: Inter, Noto Sans SC, -apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif;
@@ -45,6 +47,7 @@
   --remons-markdown-color-bg-card: #1e2235;
   --remons-markdown-color-bg-white: #2e3350;
   --remons-markdown-color-bg-tooltip: #2e3350;
+  --remons-markdown-color-button: rgba(30, 34, 53, 0.7);
 
   --remons-markdown-color-text: #b0b8c8;
   --remons-markdown-color-text-primary: #e8ecf4;
@@ -61,6 +64,7 @@
 
   --remons-markdown-color-border: #2e3350;
   --remons-markdown-color-border-dark: #3d4258;
+  --remons-markdown-color-button-border: rgba(255, 255, 255, 0.1);
 
   --remons-markdown-font-family-base: Inter, Noto Sans SC, -apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif,
     "PingFang SC", "Microsoft YaHei", sans-serif;

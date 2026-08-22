@@ -16,8 +16,21 @@ export function initImageToolbars(
   containerRef: React.MutableRefObject<HTMLDivElement | null>,
   isPrintPreview?: boolean
 ) {
-  // 排除 pre 标签内的图片(代码块中的装饰性图片)
-  const images = document.querySelectorAll('.markdown-html :not(pre) > img');
+  // 排除白名单容器内的图片（使用 closest 检查祖先元素）
+  const excludedSelectors = ['.amap-container', 'pre'];
+  const allImages = document.querySelectorAll('.markdown-html img');
+  
+  const images: HTMLImageElement[] = [];
+  allImages.forEach((img) => {
+    const imgElement = img as HTMLImageElement;
+    // 检查图片是否在排除容器内
+    const isExcluded = excludedSelectors.some(selector => 
+      imgElement.closest(selector) !== null
+    );
+    if (!isExcluded) {
+      images.push(imgElement);
+    }
+  });
   
   images.forEach((img) => {
     const imgElement = img as HTMLImageElement;
