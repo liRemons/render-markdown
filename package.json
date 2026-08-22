@@ -1,6 +1,6 @@
 {
   "name": "remons-render-markdown",
-  "version": "1.0.25-beta.1",
+  "version": "1.0.25",
   "description": "一个基于 React 的 Markdown 渲染组件，支持 GFM（GitHub Flavored Markdown）、代码高亮、Mermaid 图表、Tabs 渲染等功能。",
   "type": "module",
   "main": "./dist/index.mjs",
@@ -36,9 +36,9 @@
   "author": "remons",
   "license": "MIT",
   "peerDependencies": {
+    "@ant-design/icons": ">=5.0.0",
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
-    "@ant-design/icons": ">=5.0.0"
+    "react-dom": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "@ant-design/icons": {
@@ -78,7 +78,8 @@
     "markdown-it-link-attributes": "^4.0.1",
     "markdown-it-task-lists": "^2.1.1",
     "markdown-it-toc-done-right": "^4.2.0",
-    "methods-r": "^2.0.0-rc.1"
+    "methods-r": "^2.0.0-rc.1",
+    "viewerjs": "^1.11.9"
   },
   "repository": {
     "type": "git",

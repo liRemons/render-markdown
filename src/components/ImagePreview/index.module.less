@@ -1,0 +1,27 @@
+// 图片预览包裹容器
+.image-preview-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  border-radius: var(--remons-markdown-border-radius, 8px);
+  border: 1px solid var(--remons-markdown-color-border,#e4e4e4);
+  margin: 8px 0;
+
+  // 图片工具栏样式 - 定位在左上角
+  .image-toolbar-wrapper {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    opacity: 0.8;
+
+    .image-toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+    }
+  }
+}

@@ -6,6 +6,7 @@ import CustomBackTop from '@/components/CustomBackTop';
 import Empty from '@/components/Empty';
 import { copy } from 'methods-r';
 import renderMarkdown from './utils/render-markdown';
+import { initImageToolbars, cleanupImageToolbars } from '../ImagePreview';
 import './markdown.global.less';
 import './index.global.less';
 
@@ -145,6 +146,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     mermaidDebounce,
   } = props;
   const [html, setHtml] = useState('');
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   // 用 ref 存储最新 props，避免 useEffect 闭包陈旧问题
   const propsRef = useRef(props);
@@ -176,8 +178,12 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       toolbarMermaidTimer = setTimeout(async () => {
         if (cancelled) return;
         initCodeToolbars(propsRef.current);
+        
+        // 初始化图片工具栏
+        const { isPrintPreview } = propsRef.current;
+        initImageToolbars(containerRef, isPrintPreview);
 
-        const { isSlotMermaid, showDriverGuide, isPrintPreview, chartConfig, defaultCollapsed, cdn } = propsRef.current;
+        const { isSlotMermaid, showDriverGuide, chartConfig, defaultCollapsed, cdn } = propsRef.current;
         if (isSlotMermaid) {
           // DOM 稳定后统一渲染 Mermaid
           const { renderMermaidWithControls: renderMermaid } = await import('../MermaidRenderer');
@@ -198,6 +204,9 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
         handleDOM.remove();
       });
       codeRootMap.clear();
+      
+      // 清理图片工具栏和 Viewer 实例
+      cleanupImageToolbars();
     };
   }, [content]);
 
@@ -205,7 +214,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     <div className='markdown'>
       {
         html ?
-          <div className='markdown-html'>
+          <div className='markdown-html' ref={containerRef}>
             <div style={{ width: '100%' }} dangerouslySetInnerHTML={{ __html: html }} />
             {footer && <div className="markdown-footer">{footer}</div>}
           </div>
