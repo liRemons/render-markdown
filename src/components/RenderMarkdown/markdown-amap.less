@@ -43,6 +43,11 @@
       align-items: center;
       gap: 4px;
     }
+
+    .amap-link-btn {
+      background: linear-gradient(90deg, #1a66ff, #1a8cff);
+      color: #fff;
+    }
   }
 }
 
@@ -53,7 +58,15 @@
     align-items: stretch;
 
     .amap-label {
-      margin-bottom: 10px;
+      margin-bottom: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
+      align-items: start;
+
+      img {
+        margin-bottom: 6px;
+      }
     }
 
     .amap-actions {
@@ -63,6 +76,7 @@
 
       .amap-copy-btn,
       .amap-link-btn {
+        line-height: 14px;
         flex: 1;
         justify-content: center;
       }

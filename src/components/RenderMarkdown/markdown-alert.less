@@ -56,10 +56,16 @@
 }
 
 .markdown-alert {
-    padding: 8px 16px;
+    padding: 6px 10px;
     margin: 4px 0;
     color: inherit;
     border-radius: 8px;
+
+    p {
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+        margin-bottom: 4px !important;
+    }
 }
 
 .markdown-alert .markdown-alert-title {
@@ -69,11 +75,12 @@
     position: relative;
 
     .markdown-alert-icon {
-        padding-right: 8px;
+        padding-right: 4px;
     }
 }
 
 @media print {
+
     // 打印禁止截断
     .markdown-alert {
         break-inside: avoid;

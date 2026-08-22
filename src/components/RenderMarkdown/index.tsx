@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CopyFilled, CaretRightOutlined, CaretDownOutlined, CopyOutlined, ExportOutlined } from '@ant-design/icons';
+import { CopyFilled, CaretRightOutlined, CaretDownOutlined, ExportOutlined } from '@ant-design/icons';
 import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
 import CustomBackTop from '@/components/CustomBackTop';
@@ -26,13 +26,6 @@ const initAmapContainers = () => {
     
     const copyBtn = container.querySelector('.amap-copy-btn');
     if (copyBtn) {
-      // 替换图标为 Ant Design Icon
-      const iconSpan = copyBtn.querySelector('.amap-icon');
-      if (iconSpan) {
-        const root = createRoot(iconSpan);
-        root.render(<CopyOutlined style={{ fontSize: '16px', color: '#1890ff' }} />);
-      }
-      
       copyBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(label).then(() => {
           customMessage.success('已复制');
@@ -48,7 +41,7 @@ const initAmapContainers = () => {
       const iconSpan = linkBtn.querySelector('.amap-icon');
       if (iconSpan) {
         const root = createRoot(iconSpan);
-        root.render(<ExportOutlined style={{ fontSize: '16px', color: '#1890ff' }} />);
+        root.render(<ExportOutlined style={{ fontSize: '16px' }} />);
       }
     }
   });

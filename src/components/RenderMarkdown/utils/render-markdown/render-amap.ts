@@ -38,7 +38,7 @@ export function renderAmap(md: any) {
         </span>  
         <div class="amap-actions">
             <div class="amap-copy-btn">
-              <span class="amap-icon amap-copy-icon"></span> 复制地址
+              <span class="amap-icon"></span> 复制地址
             </div>
             <a href="${md.utils.escapeHtml(url)}" target="_blank" rel="noopener" class="amap-link-btn">
               <span class="amap-icon amap-link-icon"></span> 打开导航
