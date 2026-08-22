@@ -34,7 +34,7 @@ export function renderAmap(md: any) {
         return `<div class="amap-container" data-url="${md.utils.escapeHtml(url)}" data-label="${md.utils.escapeHtml(label)}">
         <span class="amap-label">
           <img src="https://remons.cn:3008/upload/content/icon/%E9%AB%98%E5%BE%B7%E5%9C%B0%E5%9B%BE.svg" />
-          ${md.utils.escapeHtml(label)}
+          <span class="amap-label-text">${md.utils.escapeHtml(label)}</span>
         </span>  
         <div class="amap-actions">
             <div class="amap-copy-btn">

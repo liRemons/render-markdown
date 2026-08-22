@@ -53,33 +53,37 @@
 
 /* 移动端响应式样式 */
 @media screen and (max-width: 768px) {
-  .amap-container {
-    flex-direction: column;
-    align-items: stretch;
+    .amap-container {
+      // flex-direction: column;
+      // align-items: stretch;
 
-    .amap-label {
-      margin-bottom: 6px;
-      display: flex;
-      flex-direction: column;
-      justify-content: start;
-      align-items: start;
+      .amap-label {
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        align-items: start;
 
-      img {
-        margin-bottom: 6px;
+        // img {
+        //   margin-bottom: 6px;
+        // }
+      }
+
+      .amap-actions {
+        margin-left: 0;
+        flex-direction: row;
+        width: 100%;
+
+        .amap-copy-btn,
+        .amap-link-btn {
+          height: 12px;
+          // line-height: 14px;
+          // flex: 1;
+          // justify-content: center;
+        }
       }
     }
 
-    .amap-actions {
-      margin-left: 0;
-      flex-direction: row;
-      width: 100%;
-
-      .amap-copy-btn,
-      .amap-link-btn {
-        line-height: 14px;
-        flex: 1;
-        justify-content: center;
-      }
-    }
+  .amap-label-text {
+    display: none;
   }
 }
