@@ -83,7 +83,7 @@ const CustomBackTop: React.FC<BackTopProps> = ({
 
   return (
     <div
-      className={cx('back-top')}
+      className={`${cx('back-top')} remons-markdown-circle`}
       onClick={handleClick}
     >
       <UpOutlined />

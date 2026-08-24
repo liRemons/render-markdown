@@ -19,7 +19,7 @@
   /* ── 阴影 ── */
   --remons-markdown-color-shadow: #babecc;
   --remons-markdown-color-shadow-light: #ffffff;
-  --remons-markdown-shadow-sm: -5px -5px 10px var(--remons-markdown-color-shadow-light), 5px 5px 10px var(--remons-markdown-color-shadow);
+  --remons-markdown-shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.06);
   --remons-markdown-shadow-inset: inset 1px 1px 2px var(--remons-markdown-color-shadow), inset -1px -1px 2px var(--remons-markdown-color-shadow-light);
 
   /* ── 功能色 ── */
