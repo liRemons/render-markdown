@@ -48,7 +48,7 @@
   justify-content: center;
   align-items: center;
   transform-origin: center center;
-  touch-action: none;
+  touch-action: pan-y;
 
   :global(svg) {
     max-width: 100%;
@@ -180,6 +180,7 @@
       height: 20px;
       margin: 0;
       display: inline-block;
+      border-radius: 0;
     }
   }
 
@@ -193,13 +194,11 @@
     z-index: 1;
     right: 0;
     position: absolute;
-    opacity: 0.8;
     top: 4px;
 
     .remons-markdown-circle {
       height: 24px;
       width: 24px;
-      line-height: 24px;
       font-size: 12px;
     }
   }

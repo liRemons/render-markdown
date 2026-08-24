@@ -63,7 +63,13 @@ export default function ImageToolbar({
   };
 
   const handlePreviewClick = () => {
-    if (viewerRef.current) {
+    if (viewerRef.current && containerRef.current) {
+      // 找到当前图片在容器中的索引，确保预览打开的是当前图片
+      const allImages = containerRef.current.querySelectorAll('img');
+      const index = Array.from(allImages).indexOf(imgElement);
+      if (index >= 0) {
+        viewerRef.current.view(index);
+      }
       viewerRef.current.show();
     }
   };

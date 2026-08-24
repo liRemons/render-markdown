@@ -22,13 +22,11 @@
 
 .remons-markdown-circle {
   margin: 0;
-  top: 40px;
-  left: 40px;
   width: 40px;
-  line-height: 40px;
   height: 40px;
   border-radius: 100% !important;
-  background-color: var(--remons-markdown-color-bg);
+  backdrop-filter: blur(10px);
+  background-color: var(--remons-markdown-color-button);
   padding: 0;
   text-align: center;
   margin-right: 5px;
@@ -36,6 +34,9 @@
   box-shadow: var(--remons-markdown-shadow-sm) !important;
   transition: shadow 0.2s ease-in-out;
   cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
 
   &:hover {
     box-shadow: -2px -2px 5px var(--remons-markdown-color-shadow-light),
