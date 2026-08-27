@@ -1,6 +1,6 @@
 /** 默认 CDN 配置 */
 const defaultCdn: Record<string, string> = {
-  mermaid: "https://registry.npmmirror.com/mermaid/11.17.0/files/dist/mermaid.min.js",
+  mermaid: "https://registry.npmmirror.com/mermaid/11.17.2/files/dist/mermaid.min.js",
 };
 
 /**
