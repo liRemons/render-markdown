@@ -10,7 +10,21 @@ const imageRootMap = new Map<HTMLElement, Root>();
 const imageViewersMap = new Map<HTMLImageElement, Viewer>();
 
 /** 排除白名单容器内的图片 */
-const excludedSelectors = ['.amap-container', 'pre'];
+const excludedSelectors = ['pre'];
+
+/**
+ * 向图片预览排除名单中添加选择器
+ * 外部自定义渲染器若包含图片，需调用此方法避免 Viewer.js 冲突
+ * @param selectors - CSS 选择器或选择器数组，如 '.copy-password-container' 或 ['.a', '.b']
+ */
+export function addExcludedSelector(selectors: string | string[]) {
+  const list = Array.isArray(selectors) ? selectors : [selectors];
+  list.forEach((selector) => {
+    if (!excludedSelectors.includes(selector)) {
+      excludedSelectors.push(selector);
+    }
+  });
+}
 
 /** 捕获阶段拦截 excluded 容器内图片的点击，阻止 Viewer.js 处理 */
 const handleCaptureClick = (e: Event) => {

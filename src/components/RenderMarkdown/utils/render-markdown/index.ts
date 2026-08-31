@@ -9,7 +9,6 @@ import { alert } from "@mdit/plugin-alert";
 import taskList from 'markdown-it-task-lists';
 import renderAlert from './render-alert';
 import renderTab, { tabsName } from './render-tab';
-import renderAmap from './render-amap';
 import { ensureKatexLoaded, katexPlugin } from '../markdown-it-katex';
 // ==================== 工具函数 ====================
 
@@ -50,9 +49,14 @@ function formatAnchors(data: RawAnchorNode[]): AnchorItem[] {
   }));
 }
 
+// ==================== 类型定义 ====================
+
+/** markdown-it 插件函数类型 */
+export type MarkdownPlugin = (md: any) => void;
+
 // ==================== 核心渲染 ====================
 
-async function renderMarkdown(content: string) {
+async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[]) {
   
   await ensureKatexLoaded();
   let rawAnchors: RawAnchorNode[] = [];
@@ -98,7 +102,11 @@ async function renderMarkdown(content: string) {
       throwOnError: false,
     })
     .use(taskList)
-    .use(renderAmap);
+
+  // 应用外部传入的自定义渲染器
+  if (customPlugins) {
+    customPlugins.forEach((plugin) => md.use(plugin));
+  }
 
   const info = md.render(content);
   setTimeout(() => {

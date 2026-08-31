@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CopyFilled, CaretRightOutlined, CaretDownOutlined, ExportOutlined } from '@ant-design/icons';
+import { CopyFilled, CaretRightOutlined, CaretDownOutlined } from '@ant-design/icons';
 import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
 import CustomBackTop from '@/components/CustomBackTop';
 import Empty from '@/components/Empty';
 import { copy } from 'methods-r';
-import renderMarkdown from './utils/render-markdown';
-import { initImageToolbars, cleanupImageToolbars } from '../ImagePreview';
+import renderMarkdown, { MarkdownPlugin } from './utils/render-markdown';
+import { initImageToolbars, cleanupImageToolbars, addExcludedSelector } from '../ImagePreview';
 import './markdown.global.less';
 import './index.global.less';
 
@@ -16,36 +16,6 @@ const codeRootMap = new Map<HTMLElement, Root>();
 /** Mermaid 渲染防抖延迟（ms）默认值。content 停止变化超过该时间后才统一渲染图表，避免 SSE 打字机过程中闪烁 */
 const DEFAULT_MERMAID_DEBOUNCE = 10;
 
-/**
- * 初始化 amap 容器的事件绑定和图标替换
- */
-const initAmapContainers = () => {
-  document.querySelectorAll('.amap-container').forEach((container) => {
-    // const url = (container as HTMLElement).dataset.url || '';
-    const label = (container as HTMLElement).dataset.label || '';
-    
-    const copyBtn = container.querySelector('.amap-copy-btn');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(label).then(() => {
-          customMessage.success('已复制');
-        }).catch(() => {
-          customMessage.error('复制失败');
-        });
-      });
-    }
-
-    const linkBtn = container.querySelector('.amap-link-btn');
-    if (linkBtn) {
-      // 替换图标为 Ant Design Icon
-      const iconSpan = linkBtn.querySelector('.amap-icon');
-      if (iconSpan) {
-        const root = createRoot(iconSpan);
-        root.render(<ExportOutlined style={{ fontSize: '16px' }} />);
-      }
-    }
-  });
-};
 
 /**
  * 代码折叠/展开切换组件
@@ -119,6 +89,15 @@ export interface RenderMarkdownProps {
    * 自定义 CDN 配置，如 { mermaid: 'https://...' }
    */
   cdn?: Record<string, string>;
+  /**
+   * 自定义 markdown-it 渲染器插件列表，在内部渲染器之后按序执行
+   */
+  customRenderers?: MarkdownPlugin[];
+  /**
+   * 图片预览排除名单，自定义渲染器容器内的图片不会被 Viewer.js 处理
+   * 如：['.copy-password-container']
+   */
+  excludedSelectors?: string[];
 }
 
 
@@ -198,7 +177,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
         text = '```' + codeType + '\n' + content + '\n```';
       }
 
-      const markdownInfo = await renderMarkdown(text);
+      const markdownInfo = await renderMarkdown(text, propsRef.current.customRenderers);
       if (cancelled) return; // content 已变化，丢弃过期结果
       setHtml(markdownInfo?.info);
 
@@ -212,10 +191,11 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
         
         // 初始化图片工具栏
         const { isPrintPreview } = propsRef.current;
+        const { excludedSelectors } = propsRef.current;
+        if (excludedSelectors) {
+          addExcludedSelector(excludedSelectors);
+        }
         initImageToolbars(containerRef, isPrintPreview);
-
-        // 初始化 amap 容器事件
-        initAmapContainers();
 
         const { isSlotMermaid, showDriverGuide, chartConfig, defaultCollapsed, cdn } = propsRef.current;
         if (isSlotMermaid) {
