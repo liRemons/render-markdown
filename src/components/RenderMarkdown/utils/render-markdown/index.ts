@@ -5,9 +5,9 @@ import mila from 'markdown-it-link-attributes';
 import clonedeep from 'lodash.clonedeep'
 import hljs from 'highlight.js/lib/core';
 import { tab } from "@mdit/plugin-tab";
-import { alert } from "@mdit/plugin-alert";
+import MarkdownItGitHubAlerts from 'markdown-it-github-alerts';
 import taskList from 'markdown-it-task-lists';
-import renderAlert from './render-alert';
+import { alertTitles, alertIcons, postProcessAlerts } from './render-alert';
 import renderTab, { tabsName } from './render-tab';
 import { ensureKatexLoaded, katexPlugin } from '../markdown-it-katex';
 // ==================== 工具函数 ====================
@@ -96,7 +96,10 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[])
         rel: "noopener",
       },
     })
-    .use(alert, { titleRenderer: renderAlert })
+    .use(MarkdownItGitHubAlerts, {
+      titles: alertTitles,
+      icons: alertIcons,
+    })
     .use(katexPlugin, {
       strict: false,
       throwOnError: false,
@@ -108,7 +111,8 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[])
     customPlugins.forEach((plugin) => md.use(plugin));
   }
 
-  const info = md.render(content);
+  // 渲染 markdown 并后处理 alert 标题
+  const info = postProcessAlerts(md.render(content));
   setTimeout(() => {
     requestAnimationFrame(() => renderTab());
   }, 0);
