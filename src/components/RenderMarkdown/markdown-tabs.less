@@ -61,21 +61,21 @@
 
   /* 单个导航按钮 */
   .markdown-tabs-tab-button {
-    box-shadow: none !important;
     padding: 6px 8px;
     cursor: pointer;
     font-size: 14px;
-    background: transparent;
-    transition: background 0.4s;
     border-radius: 8px 8px 0 0;
-    border-bottom: 0 !important;
     font-weight: normal;
     position: relative;
     margin: 0 2px;
     min-width: 50px;
-    border: 1px solid #ccc !important;
-    border-bottom: 0 !important;
-    background: #ebecf0;
+    background-color: var(--remons-markdown-color-button);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--remons-markdown-color-button-border) !important;
+    border-bottom: none !important;
+    box-shadow: var(--remons-markdown-shadow-sm) !important;
+    transition: all 0.3s ease-in-out;
 
     &:last-child {
       border-right: none;
@@ -87,43 +87,15 @@
     }
 
     &:hover {
-      background: #e4e4f5;
-      box-shadow: none !important;
+      background-color: var(--remons-markdown-color-button);
       color: #007bff;
     }
-
-    // &::after {
-    //   content: ' ';
-    //   z-index: 1;
-    //   width: 8px;
-    //   height: 8px;
-    //   position: absolute;
-    //   bottom: -1px;
-    //   left: 100%;
-    // }
-
-    // &::before {
-    //   content: " ";
-    //   z-index: 1;
-    //   width: 8px;
-    //   height: 8px;
-    //   position: absolute;
-    //   bottom: -1px;
-    //   right: 100%;
-    // }
 
     &.active {
       color: #007bff;
       position: relative;
-      background: #dbdbff;
-
-      // &::after {
-      //   background: radial-gradient(16px at right top, transparent 50%, #ebecf0 50%);
-      // }
-
-      // &::before {
-      //   background: radial-gradient(16px at left top, transparent 50%, #ebecf0 50%);
-      // }
+      background-color: var(--remons-markdown-color-button);
+      box-shadow: var(--remons-markdown-shadow-inset) !important;
     }
   }
 
@@ -137,7 +109,9 @@
     overflow: hidden;
     padding: 2px 10px 0 10px;
     border-radius: 0 8px 8px 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--remons-markdown-color-button-border);
+    background-color: var(--remons-markdown-color-button);
+    box-shadow: var(--remons-markdown-shadow-sm);
     height: auto;
 
     &.active {
@@ -175,6 +149,6 @@
   }
 
   .markdown-tabs-tab-content {
-    border-color: #2e3350  !important;
+    border-color: #2e3350 !important;
   }
 }

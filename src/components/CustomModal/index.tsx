@@ -14,7 +14,7 @@ interface ModalProps {
   /** 弹窗标题 */
   title: string;
   /** 弹窗宽度 */
-  width?: number;
+  width?: number | string;
   /** 关闭回调 */
   onCancel?: () => void;
   /** 底部内容 */

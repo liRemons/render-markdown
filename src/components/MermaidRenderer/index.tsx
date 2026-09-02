@@ -1,4 +1,5 @@
 ﻿import { useRef, useEffect, useCallback, useMemo, forwardRef } from "react";
+import { IsPC } from 'methods-r';
 import { downloadSVG, downloadSVGAsPNG } from "@/utils/download";
 import { LoadingOutlined } from "@ant-design/icons";
 import { useTheme, ThemeProvider } from "@/hooks/useTheme";
@@ -227,7 +228,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
           open={showSource}
           title="Mermaid 源码"
           className="mermaid-code-modal"
-          width={800}
+          width={IsPC() ? 800 : 'calc(100% - 20px)'}
           onCancel={() => setShowSource(false)}
           footer={null}
         >
