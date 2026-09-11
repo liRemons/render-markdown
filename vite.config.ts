@@ -36,7 +36,7 @@ export default defineConfig({
         moduleSideEffects: (id: string) => /\.(css|less)$/.test(id),
         propertyReadSideEffects: false,
       },
-      external: ['react', 'react-dom', 'antd', '@ant-design/icons', 'highlight.js', /^highlight\.js\/.*/, 'react/jsx-runtime', 'markdown-it'],
+      external: ['react', 'react-dom', 'react-dom/client', 'antd', '@ant-design/icons', 'highlight.js', /^highlight\.js\/.*/, 'react/jsx-runtime', 'markdown-it'],
       output: {
         format: 'es',
         esModule: true,
@@ -55,10 +55,10 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
-        drop_debugger: true,
-        passes: 3,
-        pure_funcs: ['console.log', 'console.info'],
+        // drop_console: true,
+        // drop_debugger: true,
+        // passes: 3,
+        // pure_funcs: ['console.log', 'console.info'],
       },
       mangle: {
         safari10: true,
