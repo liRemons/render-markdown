@@ -1,4 +1,5 @@
 import RenderMarkdown from './components/RenderMarkdown';
+import type { RenderMarkdownProps } from './components/RenderMarkdown';
 import markdownFormat from './components/RenderMarkdown/utils/render-markdown';
 /** 
  * languagesCommon
@@ -20,4 +21,5 @@ import { renderMermaid } from './components/MermaidRenderer'
 
 export default RenderMarkdown;
 
+export type { RenderMarkdownProps };
 export { markdownFormat, languagesCommon, initHighlighter, renderMermaid };
