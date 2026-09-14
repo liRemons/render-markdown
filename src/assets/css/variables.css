@@ -23,7 +23,15 @@
   --remons-markdown-shadow-inset: inset 1px 1px 2px var(--remons-markdown-color-shadow), inset -1px -1px 2px var(--remons-markdown-color-shadow-light);
 
   /* ── 功能色 ── */
+  --remons-markdown-color-primary: #1890ff;
+  --remons-markdown-color-warning: #faad14;
   --remons-markdown-color-danger: #ef4444;
+
+  /* ── 交互色 ── */
+  --remons-markdown-color-bg-hover: #f5f5f5;
+  --remons-markdown-color-bg-active: #e6f7ff;
+  --remons-markdown-color-bg-hover-light: rgba(0, 0, 0, 0.05);
+  --remons-markdown-color-primary-shadow: rgba(24, 144, 255, 0.1);
 
   /* ── 边框 ── */
   --remons-markdown-color-border: #dbdada;
@@ -61,6 +69,16 @@
   --remons-markdown-shadow-inset: inset 1px 1px 2px var(--remons-markdown-color-shadow), inset -1px -1px 2px var(--remons-markdown-color-shadow-light);
 
   --remons-markdown-color-danger: #ef4444;
+
+  /* ── 功能色 ── */
+  --remons-markdown-color-primary: #40a9ff;
+  --remons-markdown-color-warning: #faad14;
+
+  /* ── 交互色 ── */
+  --remons-markdown-color-bg-hover: #363b54;
+  --remons-markdown-color-bg-active: #1c3a5f;
+  --remons-markdown-color-bg-hover-light: rgba(255, 255, 255, 0.05);
+  --remons-markdown-color-primary-shadow: rgba(64, 169, 255, 0.15);
 
   --remons-markdown-color-border: #2e3350;
   --remons-markdown-color-border-dark: #3d4258;

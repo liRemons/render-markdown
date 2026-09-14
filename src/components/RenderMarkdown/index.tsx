@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { CopyFilled, CaretRightOutlined, CaretDownOutlined } from '@ant-design/icons';
+import { CopyFilled, CaretRightOutlined, CaretDownOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
 import CustomBackTop from '@/components/CustomBackTop';
 import Empty from '@/components/Empty';
+import TocSidebar, { AnchorItem } from '../TocSidebar';
 import { copy } from 'methods-r';
 import renderMarkdown, { MarkdownPlugin } from './utils/render-markdown';
 import { initImageToolbars, cleanupImageToolbars, addExcludedSelector } from '../ImagePreview';
 import './markdown.global.less';
 import './index.global.less';
+import styles from './index.module.less';
 
 /** 记录 initCodeToolbars 中为每个 <pre> 创建的 React Root，防止内存泄漏 */
 const codeRootMap = new Map<HTMLElement, Root>();
@@ -98,6 +100,10 @@ export interface RenderMarkdownProps {
    * 如：['.copy-password-container']
    */
   excludedSelectors?: string[];
+  /**
+   * 是否显示目录（TOC）按钮和侧边栏
+   */
+  showToc?: boolean;
 }
 
 
@@ -151,16 +157,54 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   const {
     content,
     showBackTop,
+    showToc: enableToc,
     footer,
     backTopTarget = document.body,
     mermaidDebounce,
   } = props;
   const [html, setHtml] = useState('');
+  const [anchors, setAnchors] = useState<AnchorItem[]>([]);
+  const [activeId, setActiveId] = useState('');
+  const [showToc, setShowToc] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // 用 ref 存储最新 props，避免 useEffect 闭包陈旧问题
   const propsRef = useRef(props);
   propsRef.current = props;
+
+  // IntersectionObserver 监听标题滚动，更新 activeId
+  useEffect(() => {
+    if (anchors.length === 0) return;
+
+    const allHrefs: string[] = [];
+    const collectHrefs = (items: AnchorItem[]) => {
+      items.forEach(item => {
+        allHrefs.push(item.href);
+        if (item.children?.length) {
+          collectHrefs(item.children);
+        }
+      });
+    };
+    collectHrefs(anchors);
+
+    const elements = allHrefs.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 多个标题可能同时进入检测区域，取最靠近视口顶部的那个
+        const visible = entries.filter(e => e.isIntersecting);
+        if (visible.length === 0) return;
+        const topMost = visible.reduce((closest, entry) =>
+          entry.boundingClientRect.top < closest.boundingClientRect.top ? entry : closest
+        );
+        setActiveId(topMost.target.id);
+      },
+      { rootMargin: '0px 0px -90% 0px', threshold: 0 }
+    );
+    elements.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [anchors]);
 
   useEffect(() => {
     let toolbarMermaidTimer: ReturnType<typeof setTimeout> | null = null;
@@ -180,6 +224,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       const markdownInfo = await renderMarkdown(text, propsRef.current.customRenderers);
       if (cancelled) return; // content 已变化，丢弃过期结果
       setHtml(markdownInfo?.info);
+      setAnchors(markdownInfo?.anchor || []);
 
       // 防抖：content 停止变化 MERMAID_DEBOUNCE ms 后才统一渲染代码工具栏和 Mermaid。
       // - SSE 打字机过程中 content 持续变化，timer 会被反复重置，不会触发 mermaid hack
@@ -235,6 +280,23 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
           : <Empty />
       }
       {showBackTop && <CustomBackTop target={() => backTopTarget} />}
+
+      {/* 目录按钮 */}
+      {enableToc && anchors.length > 0 && (
+        <div className={styles.tocToggle} onClick={() => setShowToc(!showToc)}>
+          <UnorderedListOutlined />
+        </div>
+      )}
+
+      {/* 目录面板 */}
+      {enableToc && (
+        <TocSidebar
+          anchors={anchors}
+          activeId={activeId}
+          visible={showToc}
+          onClose={() => setShowToc(false)}
+        />
+      )}
     </div>
   )
 }

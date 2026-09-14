@@ -1,0 +1,195 @@
+.tocSidebar {
+  position: fixed;
+  right: 24px;
+  top: 120px;
+  width: 280px;
+  max-height: calc(100vh - 140px);
+  background: var(--remons-markdown-color-bg-white);
+  border-radius: 8px;
+  box-shadow: var(--remons-markdown-shadow-sm);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--remons-markdown-color-button-border);
+}
+
+.tocHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--remons-markdown-color-border);
+
+  .tocTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--remons-markdown-color-text-primary);
+  }
+
+  .tocActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .tocSearchBtn {
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--remons-markdown-color-text-placeholder);
+    transition: color 0.2s;
+    padding: 2px;
+    border-radius: 4px;
+
+    &:hover {
+      color: var(--remons-markdown-color-text-primary);
+      background: var(--remons-markdown-color-bg-hover-light);
+    }
+  }
+
+  .tocClose {
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--remons-markdown-color-text-placeholder);
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--remons-markdown-color-text-primary);
+    }
+  }
+}
+
+.tocSearchBar {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--remons-markdown-color-border);
+  background: var(--remons-markdown-color-bg);
+
+  .tocSearchInput {
+    flex: 1;
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--remons-markdown-color-border);
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+    background: var(--remons-markdown-color-bg);
+    color: var(--remons-markdown-color-text);
+
+    &::placeholder {
+      color: var(--remons-markdown-color-text-placeholder);
+    }
+
+    &:focus {
+      border-color: var(--remons-markdown-color-primary);
+      box-shadow: 0 0 0 2px var(--remons-markdown-color-primary-shadow);
+    }
+  }
+
+  .tocSearchClear {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--remons-markdown-color-text-placeholder);
+    padding: 4px;
+    margin-left: 4px;
+    border-radius: 2px;
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--remons-markdown-color-text-primary);
+    }
+  }
+
+  .tocSearchExit {
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--remons-markdown-color-text-placeholder);
+    padding: 4px;
+    margin-left: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+
+    &:hover {
+      color: var(--remons-markdown-color-text-primary);
+      background: var(--remons-markdown-color-bg-hover-light);
+    }
+  }
+}
+
+.tocBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.tocItem {
+  .tocItemTitle {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 4px;
+
+    &:hover {
+      background: var(--remons-markdown-color-bg-hover);
+    }
+
+    &.active {
+      background: var(--remons-markdown-color-bg-active);
+      color: var(--remons-markdown-color-primary);
+
+      .tocLink {
+        color: var(--remons-markdown-color-primary);
+        font-weight: 500;
+      }
+    }
+
+    .tocExpandIcon {
+      margin-right: 4px;
+      font-size: 10px;
+      color: var(--remons-markdown-color-text-placeholder);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+
+      &:hover {
+        color: var(--remons-markdown-color-text);
+      }
+    }
+
+    .tocLink {
+      flex: 1;
+      font-size: 13px;
+      color: var(--remons-markdown-color-text);
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      &:hover {
+        color: var(--remons-markdown-color-primary);
+      }
+    }
+  }
+}
+
+.tocChildren {
+  overflow: hidden;
+}
+
+.highlight {
+  color: var(--remons-markdown-color-warning);
+  font-weight: 600;
+}
+
+.tocEmpty {
+  padding: 20px 12px;
+  text-align: center;
+  color: var(--remons-markdown-color-text-placeholder);
+  font-size: 13px;
+}

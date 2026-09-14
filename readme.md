@@ -65,6 +65,7 @@ import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter } fro
 | editButton | React.ReactNode | ❌ | - | 自定义编辑按钮 |
 | backTopTarget | HTMLElement | ❌ | body | 返回顶部按钮监听的容器 |
 | showDriverGuide | boolean | ❌ | false | 是否显示新手引导 |
+| showToc | boolean | ❌ | false | 是否显示目录（TOC）按钮和侧边栏 |
 
 ### markdownFormat 函数
 
