@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import classnames from 'classnames';
 import { RightOutlined, DownOutlined, SearchOutlined, CloseOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
 
@@ -187,17 +188,17 @@ function TocSidebar({ anchors, activeId, visible, onClose }: TocSidebarProps) {
   }
 
   return (
-    <div className={styles.tocSidebar}>
+    <div className={classnames(styles.tocSidebar, 'md-toc-sidebar')}>
       <div className={styles.tocHeader}>
         <span className={styles.tocTitle}>目录</span>
         <div className={styles.tocActions}>
           {!searching && (
-            <span className={styles.tocSearchBtn} onClick={handleSearchToggle} title="搜索">
+            <span className="remons-markdown-circle" onClick={handleSearchToggle} title="搜索">
               <SearchOutlined />
             </span>
           )}
-          <span className={styles.tocClose} onClick={onClose}>
-            ×
+          <span className={classnames('remons-markdown-circle', styles.tocClose)} onClick={onClose}>
+            <CloseOutlined />
           </span>
         </div>
       </div>

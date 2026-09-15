@@ -29,32 +29,13 @@
   .tocActions {
     display: flex;
     align-items: center;
-    gap: 4px;
-  }
 
-  .tocSearchBtn {
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--remons-markdown-color-text-placeholder);
-    transition: color 0.2s;
-    padding: 2px;
-    border-radius: 4px;
-
-    &:hover {
-      color: var(--remons-markdown-color-text-primary);
-      background: var(--remons-markdown-color-bg-hover-light);
-    }
-  }
-
-  .tocClose {
-    cursor: pointer;
-    font-size: 18px;
-    line-height: 1;
-    color: var(--remons-markdown-color-text-placeholder);
-    transition: color 0.2s;
-
-    &:hover {
-      color: var(--remons-markdown-color-text-primary);
+    :global {
+      .remons-markdown-circle {
+        width: 22px;
+        height: 22px;
+        font-size: 12px;
+      }
     }
   }
 }
@@ -192,4 +173,61 @@
   text-align: center;
   color: var(--remons-markdown-color-text-placeholder);
   font-size: 13px;
+}
+
+@media screen and (max-width: 500px) {
+  .tocSidebar {
+    right: 4px;
+    top: 56px;
+    width: 200px;
+    max-height: calc(100vh - 70px);
+    line-height: 18px;
+  }
+
+  .tocHeader {
+    padding: 4px 6px;
+
+    .tocTitle {
+      font-size: 12px;
+    }
+  }
+
+  .tocSearchBar {
+    padding: 4px 6px;
+
+    .tocSearchInput {
+      height: 24px;
+      font-size: 12px;
+      padding: 0 4px;
+    }
+
+    .tocSearchExit {
+      font-size: 14px;
+    }
+  }
+
+  .tocBody {
+    padding: 2px 0;
+  }
+
+  .tocItem {
+    .tocItemTitle {
+      padding: 2px 6px;
+
+      .tocLink {
+        font-size: 12px;
+      }
+
+      .tocExpandIcon {
+        width: 12px;
+        height: 12px;
+        font-size: 8px;
+      }
+    }
+  }
+
+  .tocEmpty {
+    padding: 10px 6px;
+    font-size: 12px;
+  }
 }

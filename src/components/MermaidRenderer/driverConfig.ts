@@ -16,7 +16,6 @@ export function getDriverConfig(showSourceView: boolean, hasSvg: boolean) {
       condition: () => !localStorage[menuDriverKey] && showSourceView && !IsPC() && localStorage.docListMenuVisible !== 'true',
       onOpen: () => { localStorage[menuDriverKey] = '1'; },
       steps: [
-        { element: '.docList-menu-anchor', popover: { title: '大纲', description: '点击此处您可查看大纲' } },
         { element: '.docList-menu-list', popover: { title: '列表', description: '点击此处您可查看当前分类下文章列表' } },
         { element: '.docList-menu-copyHtml', popover: { title: '复制', description: '点击此处您可复制 HTML 渲染的格式内容' } },
         { element: '.docList-menu-copyMarkdown', popover: { title: '复制', description: '点击此处您可复制 markdown 源码' } },

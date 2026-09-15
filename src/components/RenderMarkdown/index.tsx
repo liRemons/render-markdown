@@ -6,6 +6,7 @@ import CustomBackTop from '@/components/CustomBackTop';
 import Empty from '@/components/Empty';
 import TocSidebar, { AnchorItem } from '../TocSidebar';
 import { copy } from 'methods-r';
+import classnames from 'classnames';
 import renderMarkdown, { MarkdownPlugin } from './utils/render-markdown';
 import { initImageToolbars, cleanupImageToolbars, addExcludedSelector } from '../ImagePreview';
 import { useIncrementalRender } from '@/hooks/useIncrementalRender';
@@ -336,7 +337,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
 
       {/* 目录按钮 */}
       {enableToc && effectiveAnchors.length > 0 && (
-        <div className={styles.tocToggle} onClick={() => setShowToc(!showToc)}>
+        <div className={classnames(styles.tocToggle, 'md-toc-toggle', 'remons-markdown-circle')} onClick={() => setShowToc(!showToc)}>
           <UnorderedListOutlined />
         </div>
       )}
