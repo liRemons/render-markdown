@@ -8,6 +8,7 @@ import TocSidebar, { AnchorItem } from '../TocSidebar';
 import { copy } from 'methods-r';
 import renderMarkdown, { MarkdownPlugin } from './utils/render-markdown';
 import { initImageToolbars, cleanupImageToolbars, addExcludedSelector } from '../ImagePreview';
+import { useIncrementalRender } from '@/hooks/useIncrementalRender';
 import './markdown.global.less';
 import './index.global.less';
 import styles from './index.module.less';
@@ -104,6 +105,15 @@ export interface RenderMarkdownProps {
    * 是否显示目录（TOC）按钮和侧边栏
    */
   showToc?: boolean;
+  /**
+   * 是否启用增量渲染（使用 morphdom 进行 DOM 差异化更新）
+   * 适用于流式输出或编辑器场景，避免全量重绘导致的状态丢失
+   */
+  useIncremental?: boolean;
+  /**
+   * 增量渲染节流时间（ms），默认 16
+   */
+  incrementalThrottleMs?: number;
 }
 
 
@@ -161,6 +171,8 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     footer,
     backTopTarget = document.body,
     mermaidDebounce,
+    useIncremental = false,
+    incrementalThrottleMs,
   } = props;
   const [html, setHtml] = useState('');
   const [anchors, setAnchors] = useState<AnchorItem[]>([]);
@@ -172,71 +184,47 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
-  // IntersectionObserver 监听标题滚动，更新 activeId
-  useEffect(() => {
-    if (anchors.length === 0) return;
+  // 增量渲染：使用 morphdom 进行 DOM 差异化更新
+  const { anchors: incAnchors, hasContent, setInnerRef } = useIncrementalRender({
+    content,
+    codeType: props.codeType,
+    customRenderers: props.customRenderers,
+    throttleMs: incrementalThrottleMs,
+  });
 
-    const allHrefs: string[] = [];
-    const collectHrefs = (items: AnchorItem[]) => {
-      items.forEach(item => {
-        allHrefs.push(item.href);
-        if (item.children?.length) {
-          collectHrefs(item.children);
-        }
-      });
-    };
-    collectHrefs(anchors);
+  // 合并两种模式的 anchors
+  const effectiveAnchors = useIncremental ? incAnchors : anchors;
+  // 合并两种模式的内容判断
+  const showContent = useIncremental ? hasContent : !!html;
 
-    const elements = allHrefs.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
-    if (elements.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // 多个标题可能同时进入检测区域，取最靠近视口顶部的那个
-        const visible = entries.filter(e => e.isIntersecting);
-        if (visible.length === 0) return;
-        const topMost = visible.reduce((closest, entry) =>
-          entry.boundingClientRect.top < closest.boundingClientRect.top ? entry : closest
-        );
-        setActiveId(topMost.target.id);
-      },
-      { rootMargin: '0px 0px -90% 0px', threshold: 0 }
-    );
-    elements.forEach(el => observer.observe(el));
-    return () => observer.disconnect();
-  }, [anchors]);
-
+  // 合并渲染逻辑：content 变化时，先渲染 markdown，再防抖初始化工具栏 + Mermaid
   useEffect(() => {
     let toolbarMermaidTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
 
-    // 异步初始化：markdown 文本立即渲染（保证打字机效果），
-    // 代码工具栏 + Mermaid 图表防抖延迟渲染（避免 SSE 流式过程中重复 hack 导致闪烁）
     const init = async () => {
-      const { codeType } = propsRef.current;
-      let text = '';
-      if (!codeType || codeType?.toLocaleLowerCase() === 'md') {
-        text = content;
-      } else {
-        text = '```' + codeType + '\n' + content + '\n```';
+      // 非增量模式：先渲染 markdown，增量模式在 hook 中处理
+      if (!useIncremental) {
+        const { codeType } = propsRef.current;
+        let text = '';
+        if (!codeType || codeType?.toLocaleLowerCase() === 'md') {
+          text = content;
+        } else {
+          text = '```' + codeType + '\n' + content + '\n```';
+        }
+
+        const markdownInfo = await renderMarkdown(text, propsRef.current.customRenderers);
+        if (cancelled) return;
+        setHtml(markdownInfo?.info);
+        setAnchors(markdownInfo?.anchor || []);
       }
 
-      const markdownInfo = await renderMarkdown(text, propsRef.current.customRenderers);
-      if (cancelled) return; // content 已变化，丢弃过期结果
-      setHtml(markdownInfo?.info);
-      setAnchors(markdownInfo?.anchor || []);
-
-      // 防抖：content 停止变化 MERMAID_DEBOUNCE ms 后才统一渲染代码工具栏和 Mermaid。
-      // - SSE 打字机过程中 content 持续变化，timer 会被反复重置，不会触发 mermaid hack
-      // - 只有当 content 稳定（流结束或暂停）后才会扫描并渲染图表
-      // - 此时 mermaid 源码通常已完整，避免对不完整源码的渲染
+      // 两种模式共用：防抖初始化代码工具栏、图片工具栏和 Mermaid
       toolbarMermaidTimer = setTimeout(async () => {
         if (cancelled) return;
         initCodeToolbars(propsRef.current);
-        
-        // 初始化图片工具栏
-        const { isPrintPreview } = propsRef.current;
-        const { excludedSelectors } = propsRef.current;
+
+        const { isPrintPreview, excludedSelectors } = propsRef.current;
         if (excludedSelectors) {
           addExcludedSelector(excludedSelectors);
         }
@@ -257,32 +245,97 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       cancelled = true;
       if (toolbarMermaidTimer) clearTimeout(toolbarMermaidTimer);
 
-      // 卸载代码工具栏 React Root
-      codeRootMap.forEach((root, handleDOM) => {
-        root.unmount();
-        handleDOM.remove();
-      });
-      codeRootMap.clear();
-      
-      // 清理图片工具栏和 Viewer 实例
-      cleanupImageToolbars();
+      // 非增量模式：卸载代码工具栏 React Root 和清理图片工具栏
+      if (!useIncremental) {
+        codeRootMap.forEach((root, handleDOM) => {
+          root.unmount();
+          handleDOM.remove();
+        });
+        codeRootMap.clear();
+        cleanupImageToolbars();
+      }
     };
   }, [content]);
 
+  // IntersectionObserver 监听标题滚动，更新 activeId
+  useEffect(() => {
+    if (effectiveAnchors.length === 0) return;
+
+    const allHrefs: string[] = [];
+    const collectHrefs = (items: AnchorItem[]) => {
+      items.forEach(item => {
+        allHrefs.push(item.href);
+        if (item.children?.length) {
+          collectHrefs(item.children);
+        }
+      });
+    };
+    collectHrefs(effectiveAnchors);
+
+    const elements = allHrefs.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 多个标题可能同时进入检测区域，取最靠近视口顶部的那个
+        const visible = entries.filter(e => e.isIntersecting);
+        if (visible.length === 0) return;
+        const topMost = visible.reduce((closest, entry) =>
+          entry.boundingClientRect.top < closest.boundingClientRect.top ? entry : closest
+        );
+        setActiveId(topMost.target.id);
+      },
+      { rootMargin: '0px 0px -90% 0px', threshold: 0 }
+    );
+    elements.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [effectiveAnchors]);
+
+  // 页面 hash 支持：初始定位 + 监听 hash 变化
+  useEffect(() => {
+    // 根据当前 hash 滚动到对应元素
+    const scrollToHash = () => {
+      const hash = window.location.hash.slice(1);
+      if (!hash) return;
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActiveId(hash);
+      }
+    };
+
+    // DOM 渲染后执行初始定位
+    const timer = setTimeout(scrollToHash, 100);
+
+    // 监听 hash 变化（浏览器前进/后退按钮）
+    const handleHashChange = () => scrollToHash();
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [effectiveAnchors]);
+
+  // 根据模式确定 inner div 的属性
+  const innerProps = useIncremental
+    ? { ref: setInnerRef as any }
+    : { dangerouslySetInnerHTML: { __html: html } };
+
   return (
     <div className='markdown'>
-      {
-        html ?
-          <div className='markdown-html' ref={containerRef}>
-            <div style={{ width: '100%' }} dangerouslySetInnerHTML={{ __html: html }} />
-            {footer && <div className="markdown-footer">{footer}</div>}
-          </div>
-          : <Empty />
-      }
+      {showContent ? (
+        <div className='markdown-html' ref={containerRef}>
+          <div style={{ width: '100%' }} {...innerProps} />
+          {footer && <div className="markdown-footer">{footer}</div>}
+        </div>
+      ) : (
+        <Empty />
+      )}
       {showBackTop && <CustomBackTop target={() => backTopTarget} />}
 
       {/* 目录按钮 */}
-      {enableToc && anchors.length > 0 && (
+      {enableToc && effectiveAnchors.length > 0 && (
         <div className={styles.tocToggle} onClick={() => setShowToc(!showToc)}>
           <UnorderedListOutlined />
         </div>
@@ -291,12 +344,12 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       {/* 目录面板 */}
       {enableToc && (
         <TocSidebar
-          anchors={anchors}
+          anchors={effectiveAnchors}
           activeId={activeId}
           visible={showToc}
           onClose={() => setShowToc(false)}
         />
       )}
     </div>
-  )
+  );
 }

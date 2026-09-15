@@ -19,7 +19,14 @@ import { initHighlighter } from './components/RenderMarkdown/utils/render-markdo
 */
 import { renderMermaid } from './components/MermaidRenderer'
 
+/**
+ * useIncrementalRender
+ * 增量渲染 hook，使用 morphdom 进行 DOM 差异化更新
+ */
+import { useIncrementalRender } from './hooks/useIncrementalRender'
+import type { MarkdownPlugin, AnchorItem } from './components/RenderMarkdown/utils/render-markdown'
+
 export default RenderMarkdown;
 
-export type { RenderMarkdownProps };
-export { markdownFormat, languagesCommon, initHighlighter, renderMermaid };
+export type { RenderMarkdownProps, MarkdownPlugin, AnchorItem };
+export { markdownFormat, languagesCommon, initHighlighter, renderMermaid, useIncrementalRender };

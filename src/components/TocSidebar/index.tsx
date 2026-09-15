@@ -47,6 +47,7 @@ function TocItem({ item, depth = 0, activeId, searchText }: TocItemProps) {
     const id = item.href;
     const el = document.getElementById(id);
     if (el) {
+      history.pushState(null, '', `#${id}`);
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };

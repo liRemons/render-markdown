@@ -21,6 +21,7 @@
 ### 核心功能
 
 - **GFM 支持**: 完整的 GitHub Flavored Markdown 渲染
+- **增量渲染**: 基于 morphdom 的 DOM 差异化更新，适用于流式输出场景
 - **代码高亮**: 基于 highlight.js 的代码语法高亮
 - **Mermaid 图表**: 支持 Mermaid 语法渲染流程图、时序图等
 - **Tab 标签页**: 支持 Tab 标签页语法
@@ -28,6 +29,7 @@
 - **目录锚点**: 自动生成文档目录和锚点链接（自行实现目录渲染）
 - **代码复制**: 一键复制代码块
 - **代码折叠**: 支持代码块折叠展开
+- **深色模式**: 自动适配深色/浅色主题
 
 ## API
 
@@ -40,7 +42,7 @@ npm install remons-render-markdown
 ### 导出内容
 
 ```typescript
-import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter } from 'remons-render-markdown';
+import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter, useIncrementalRender } from 'remons-render-markdown';
 ```
 
 #### 默认导出
@@ -52,6 +54,8 @@ import RenderMarkdown, { markdownFormat, languagesCommon,  initHighlighter } fro
 - **markdownFormat**: Markdown 解析函数，返回 `{ anchor: AnchorItem[], info: string }`
 - **languagesCommon**: 默认支持的语言包配置（javascript, typescript, css, json, bash, xml, plaintext）
 - **initHighlighter**: 初始化高亮语言包的函数
+- **useIncrementalRender**: 增量渲染 hook，使用 morphdom 进行 DOM 差异化更新，适用于流式输出场景
+- **renderMermaid**: 独立的 Mermaid 图表渲染组件
 
 ### RenderMarkdown 组件 Props
 
@@ -251,6 +255,54 @@ console.log(x + y);
   );
 }
 ```
+
+### 使用 useIncrementalRender 实现增量渲染
+
+`useIncrementalRender` 适用于流式输出场景（如 AI 对话），通过 morphdom 实现高效的 DOM 差异化更新。
+
+```tsx
+import { useIncrementalRender } from 'remons-render-markdown';
+
+function StreamingContent({ content }) {
+  const { anchors, hasContent, setInnerRef } = useIncrementalRender({
+    content,
+    // 可选：节流时间，默认 16ms
+    throttleMs: 16,
+  });
+
+  return (
+    <div>
+      {hasContent && <div ref={setInnerRef} />}
+      {anchors.length > 0 && (
+        <ul>
+          {anchors.map((item) => (
+            <li key={item.href}>
+              <a href={`#${item.href}`}>{item.title}</a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+```
+
+**参数：**
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| content | string | ✅ | - | Markdown 内容 |
+| codeType | string | ❌ | - | 代码类型，不传则按 Markdown 渲染 |
+| customRenderers | MarkdownPlugin[] | ❌ | - | 自定义 markdown-it 插件 |
+| throttleMs | number | ❌ | 16 | 节流时间（ms） |
+
+**返回值：**
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| anchors | AnchorItem[] | 文档锚点列表 |
+| hasContent | boolean | 是否有内容 |
+| setInnerRef | (node: HTMLDivElement) => void | 内容容器的 ref 回调 |
 
 ### 关于语法
 

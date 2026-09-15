@@ -1,7 +1,7 @@
 ﻿/* ===== CSS 自定义属性（主题变量） ===== */
 /* 浅色主题（默认） */
 :root,
-[data-theme="light"] {
+html[data-theme="light"] {
   /* ── 基础颜色 ── */
   --remons-markdown-color-bg: transparent;
   --remons-markdown-color-bg-card: transparent;
@@ -50,7 +50,7 @@
 }
 
 /* ===== 深色主题 ===== */
-[data-theme="dark"] {
+html[data-theme="dark"] {
   --remons-markdown-color-bg: #1a1d2e;
   --remons-markdown-color-bg-card: #1e2235;
   --remons-markdown-color-bg-white: #2e3350;
