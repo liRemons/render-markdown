@@ -345,8 +345,6 @@ title: 图表标题
 
 #### Alert 提示框
 
-依赖于 `@mdit/plugin-alert` 插件，参考 [mdit-plugin-alert](https://mdit-plugins.github.io/zh/alert.html) 的文档。
-
 语法示例：
 
 ```markdown

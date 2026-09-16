@@ -25,7 +25,6 @@ declare module 'markdown-it-anchor';
 declare module 'markdown-it-toc-done-right';
 declare module 'markdown-it-link-attributes';
 declare module '@mdit/plugin-tab';
-declare module '@mdit/plugin-alert';
 declare module 'lodash.clonedeep';
 declare module 'methods-r';
 declare module 'highlight.js/lib/core';
