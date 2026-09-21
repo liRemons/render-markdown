@@ -1,10 +1,12 @@
 .tocSidebar {
-  position: fixed;
+  position: absolute;
   right: 24px;
-  top: 120px;
+  top: 100px;
   width: 280px;
-  max-height: calc(100vh - 140px);
-  background: var(--remons-markdown-color-bg-white);
+  max-height: calc(100vh - 120px);
+  background: var(--remons-markdown-color-toc);
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 8px;
   box-shadow: var(--remons-markdown-shadow-sm);
   z-index: 1000;
@@ -108,17 +110,13 @@
   .tocItemTitle {
     display: flex;
     align-items: center;
-    padding: 6px 10px;
+    padding: 4px 10px;
     cursor: pointer;
     transition: all 0.2s;
+    line-height: 20px;
     border-radius: 4px;
 
-    &:hover {
-      background: var(--remons-markdown-color-bg-hover);
-    }
-
     &.active {
-      background: var(--remons-markdown-color-bg-active);
       color: var(--remons-markdown-color-primary);
 
       .tocLink {
@@ -177,10 +175,10 @@
 
 @media screen and (max-width: 500px) {
   .tocSidebar {
-    right: 4px;
-    top: 56px;
-    width: 200px;
-    max-height: calc(100vh - 70px);
+    right: 24px;
+    top: 90px;
+    width: 250px;
+    max-height: calc(100vh - 100px);
     line-height: 18px;
   }
 

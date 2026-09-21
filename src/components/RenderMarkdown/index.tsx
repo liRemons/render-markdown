@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { CopyFilled, CaretRightOutlined, CaretDownOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
@@ -185,12 +185,29 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
+  // 增量渲染：diff 移除节点时清理其中的代码工具栏 React Root，避免 Root 泄漏
+  const handleNodeDiscarded = useCallback((el: HTMLElement) => {
+    const handles: HTMLElement[] = [];
+    if (el.classList?.contains('pre-handle')) {
+      handles.push(el);
+    }
+    el.querySelectorAll('.pre-handle').forEach((n) => handles.push(n as HTMLElement));
+    handles.forEach((h) => {
+      const root = codeRootMap.get(h);
+      if (root) {
+        root.unmount();
+        codeRootMap.delete(h);
+      }
+    });
+  }, []);
+
   // 增量渲染：使用 morphdom 进行 DOM 差异化更新
   const { anchors: incAnchors, hasContent, setInnerRef } = useIncrementalRender({
     content,
     codeType: props.codeType,
     customRenderers: props.customRenderers,
     throttleMs: incrementalThrottleMs,
+    onNodeDiscarded: handleNodeDiscarded,
   });
 
   // 合并两种模式的 anchors
@@ -257,6 +274,26 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       }
     };
   }, [content]);
+
+  // 组件卸载（增量模式）：清理本容器内已挂载的代码工具栏 Root
+  // （codeRootMap 是模块级、document 维度的，只清理当前容器，避免误伤其他实例）
+  const unmountSnapshotRef = useRef<HTMLElement | null>(null);
+  unmountSnapshotRef.current = containerRef.current;
+  useEffect(() => {
+    return () => {
+      if (!propsRef.current.useIncremental) return;
+      const container = unmountSnapshotRef.current;
+      if (!container) return;
+      container.querySelectorAll('.pre-handle').forEach((h) => {
+        const handle = h as HTMLElement;
+        const root = codeRootMap.get(handle);
+        if (root) {
+          root.unmount();
+          codeRootMap.delete(handle);
+        }
+      });
+    };
+  }, []);
 
   // IntersectionObserver 监听标题滚动，更新 activeId
   useEffect(() => {

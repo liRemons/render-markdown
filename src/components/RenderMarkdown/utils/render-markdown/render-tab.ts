@@ -139,8 +139,6 @@ function renderTab() {
     if (header.dataset.clickInited) return;
     header.dataset.clickInited = 'true';
 
-    // 获取该组内的所有内容块（只需获取一次，无需在每次点击时重复查询）
-    const panels = contents.querySelectorAll(`.${tabsName}-tab-content`);
     const markdown = document.querySelector('.markdown')
     // 将点击事件绑定在 header 上（事件委托）
     header.addEventListener('click', (e) => {
@@ -153,7 +151,9 @@ function renderTab() {
       const items = header.querySelectorAll(`.${tabsName}-tab-button`);
       const index = Array.from(items).indexOf(item as HTMLElement);
 
-      // 3. 移除该组内所有按钮和内容块的 active 类
+      // 3. 实时查询内容块（增量渲染增删 tab 后，闭包里缓存的 NodeList 索引会错位）
+      const panels = contents.querySelectorAll(`.${tabsName}-tab-content`);
+      // 移除该组内所有按钮和内容块的 active 类
       items.forEach(i => i.classList.remove('active'));
       panels.forEach(p => p.classList.remove('active'));
 

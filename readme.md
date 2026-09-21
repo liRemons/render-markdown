@@ -295,6 +295,7 @@ function StreamingContent({ content }) {
 | codeType | string | ❌ | - | 代码类型，不传则按 Markdown 渲染 |
 | customRenderers | MarkdownPlugin[] | ❌ | - | 自定义 markdown-it 插件 |
 | throttleMs | number | ❌ | 16 | 节流时间（ms） |
+| onNodeDiscarded | (el: HTMLElement) => void | ❌ | - | 节点被 diff 移除后触发（含被移除子树的子节点），用于清理 React Root 等挂载状态 |
 
 **返回值：**
 
@@ -303,6 +304,13 @@ function StreamingContent({ content }) {
 | anchors | AnchorItem[] | 文档锚点列表 |
 | hasContent | boolean | 是否有内容 |
 | setInnerRef | (node: HTMLDivElement) => void | 内容容器的 ref 回调 |
+
+**增量渲染与自定义插件（customRenderers）的配合约定：**
+
+1. 插件产出的容器节点（如 `:::badge` / `:::linkCard` / `<plugin-container>`）按"标签 + className"语义匹配，内容位移时不同类型的块不会被错配到旧节点上。
+2. 元素上 JS 后加的 `data-*` 属性（如初始化守卫位 `data-xxx-inited`）在 diff 后会被保留，"只初始化一次"的守卫逻辑不会在增量渲染中被重复触发。
+3. JS 动态插入的额外子节点（如 React 挂载点、收起按钮）默认会被 diff 移除；若需跨增量渲染保留，请给节点设置 `data-md-persist` 属性（见导出常量 `MD_PERSIST_ATTR`）。
+4. 被 diff 移除的节点会触发 `onNodeDiscarded`，请在此卸载挂载在其上的 React Root，避免内存泄漏。
 
 ### 关于语法
 

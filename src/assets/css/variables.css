@@ -6,6 +6,7 @@ html[data-theme="light"] {
   --remons-markdown-color-bg: transparent;
   --remons-markdown-color-bg-card: transparent;
   --remons-markdown-color-button: rgba(255, 255, 255, 0.15);
+  --remons-markdown-color-toc: rgba(255, 255, 255, 0.8);
   --remons-markdown-color-bg-white: #ffffff;
   --remons-markdown-color-bg-tooltip: #61616141;
 
@@ -19,7 +20,7 @@ html[data-theme="light"] {
   /* ── 阴影 ── */
   --remons-markdown-color-shadow: #babecc;
   --remons-markdown-color-shadow-light: #ffffff;
-  --remons-markdown-shadow-sm:  0 2px 8px rgba(0, 0, 0, 0.06);
+  --remons-markdown-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
   --remons-markdown-shadow-inset: inset 1px 1px 2px var(--remons-markdown-color-shadow), inset -1px -1px 2px var(--remons-markdown-color-shadow-light);
 
   /* ── 功能色 ── */
@@ -53,6 +54,7 @@ html[data-theme="light"] {
 html[data-theme="dark"] {
   --remons-markdown-color-bg: #1a1d2e;
   --remons-markdown-color-bg-card: #1e2235;
+  --remons-markdown-color-toc: rgba(30, 34, 53, 0.7);
   --remons-markdown-color-bg-white: #2e3350;
   --remons-markdown-color-bg-tooltip: #2e3350;
   --remons-markdown-color-button: rgba(30, 34, 53, 0.7);
