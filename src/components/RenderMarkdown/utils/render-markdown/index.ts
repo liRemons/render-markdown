@@ -7,6 +7,7 @@ import hljs from 'highlight.js/lib/core';
 import { tab } from "@mdit/plugin-tab";
 import MarkdownItGitHubAlerts from 'markdown-it-github-alerts';
 import taskList from 'markdown-it-task-lists';
+import { emptyTaskLists } from './empty-task-lists';
 import { alertTitles, alertIcons, postProcessAlerts } from './render-alert';
 import renderTab, { tabsName } from './render-tab';
 import { ensureKatexLoaded, katexPlugin } from '../markdown-it-katex';
@@ -105,6 +106,7 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[])
       throwOnError: false,
     })
     .use(taskList)
+    .use(emptyTaskLists)
 
   // 应用外部传入的自定义渲染器
   if (customPlugins) {
