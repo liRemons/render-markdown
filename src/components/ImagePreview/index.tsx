@@ -1,13 +1,34 @@
-import { createRoot, Root } from 'react-dom/client';
 import Viewer from 'viewerjs';
-import ImageToolbar from './ImageToolbar';
+import 'viewerjs/dist/viewer.css';
 import styles from './index.module.less';
-
-/** 记录图片操作按钮的 React Root，防止内存泄漏 */
-const imageRootMap = new Map<HTMLElement, Root>();
 
 /** 记录每个图片对应的 Viewer 实例 */
 const imageViewersMap = new Map<HTMLImageElement, Viewer>();
+
+/**
+ * 初始化 Viewer.js 预览实例
+ */
+const initViewer = (
+  imgElement: HTMLImageElement,
+  containerRef: React.MutableRefObject<HTMLDivElement | null>
+) => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  const viewer = new Viewer(container, {
+    toolbar: true,
+    navbar: true,
+    title: false,
+    tooltip: true,
+    zoomable: true,
+    rotatable: false,
+    scalable: false,
+    transition: true,
+    fullscreen: true,
+    keyboard: true,
+  });
+  imageViewersMap.set(imgElement, viewer);
+};
 
 /** 排除白名单容器内的图片 */
 const excludedSelectors = ['pre'];
@@ -117,27 +138,8 @@ export function initImageToolbars(
     imgElement.parentNode?.insertBefore(wrapper, imgElement);
     wrapper.appendChild(imgElement);
 
-    // 创建工具栏容器
-    const toolbarContainer = document.createElement('div');
-    toolbarContainer.className = styles['image-toolbar-wrapper'];
-
-    // 将工具栏添加到 wrapper
-    wrapper.appendChild(toolbarContainer);
-
-    // 创建 React Root
-    const root = createRoot(toolbarContainer);
-    imageRootMap.set(toolbarContainer, root);
-
-    // 渲染工具栏组件
-    root.render(
-      <ImageToolbar
-        imgElement={imgElement}
-        containerRef={containerRef}
-        onViewerReady={(imgEl, viewer) => {
-          imageViewersMap.set(imgEl, viewer);
-        }}
-      />
-    );
+    // 初始化 Viewer.js 预览实例
+    initViewer(imgElement, containerRef);
 
     // 设置默认缩略图样式
     imgElement.style.maxHeight = '100px';
@@ -158,13 +160,6 @@ export function cleanupImageToolbars() {
     container.removeEventListener('click', handleContainerClick);
     containerClickBound = false;
   }
-
-  // 卸载图片工具栏 React Root
-  imageRootMap.forEach((root, toolbarContainer) => {
-    root.unmount();
-    toolbarContainer.remove();
-  });
-  imageRootMap.clear();
 
   // 清理所有 Viewer 实例
   imageViewersMap.forEach((viewer) => {
