@@ -71,7 +71,7 @@ function TocItem({ item, depth = 0, activeId, searchText }: TocItemProps) {
   };
 
   return (
-    <div className={styles.tocItem} ref={itemRef} style={{ paddingLeft: depth * 6 }}>
+    <div className={styles.tocItem} ref={itemRef} style={{ paddingLeft: 14 }}>
       <div className={`${styles.tocItemTitle}${isActive ? ` ${styles.active}` : ''}`}>
         {hasChildren && (
           <span
