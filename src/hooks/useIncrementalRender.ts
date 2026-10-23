@@ -22,6 +22,11 @@ interface UseIncrementalRenderOptions {
    * 用于清理挂在被移除节点上的 React Root、监听器等状态。
    */
   onNodeDiscarded?: (el: HTMLElement) => void;
+  /**
+   * 每次 DOM patch 完成后同步触发（浏览器绘制前）。
+   * 用于恢复被 diff 丢弃的运行时标记（如代码块工具栏的动态 class / 语言标签）。
+   */
+  onPatched?: () => void;
 }
 
 /**
@@ -59,6 +64,86 @@ function getNodeSignature(node: Node): string | null {
   return `${el.tagName.toLowerCase()}#${normalized}`;
 }
 
+/** 已挂载插件容器在 mount 时记录的原始 class（组件渲染后 class 可能被追加，不能再用当前 class 匹配） */
+const MD_KEY_ATTR = 'data-md-key';
+
+const normalizeClassName = (el: HTMLElement): string =>
+  (typeof el.className === 'string' ? el.className : '')
+    .split(/\s+/)
+    .filter((c) => c && !c.startsWith('copy-') && !JS_ADDED_CLASSES.has(c))
+    .join(' ');
+
+/** 持久节点身份：优先 mount 时记录的原始 class，否则用当前 class */
+const getPersistKey = (el: HTMLElement): string => {
+  const custom = el.getAttribute(MD_KEY_ATTR);
+  return `${el.tagName.toLowerCase()}#${custom ?? normalizeClassName(el)}`;
+};
+
+/** 读取节点的业务配置属性（排除占位符 / 持久标记等运行时属性） */
+const getPersistConfig = (el: HTMLElement): Record<string, string> => {
+  const config: Record<string, string> = {};
+  for (const attr of Array.from(el.attributes)) {
+    if (!attr.name.startsWith('data-')) continue;
+    if (attr.name === MD_PERSIST_ATTR || attr.name === MD_KEY_ATTR) continue;
+    if (attr.name.endsWith('-placeholder')) continue;
+    config[attr.name] = attr.value;
+  }
+  return config;
+};
+
+/** 新占位符的配置与旧组件完全一致时才复用旧节点，保证配置修改后会重新挂载 */
+const isSamePersistConfig = (oldEl: HTMLElement, placeholderEl: HTMLElement): boolean => {
+  const next = getPersistConfig(placeholderEl);
+  const prev = getPersistConfig(oldEl);
+  return Object.keys(next).every((name) => prev[name] === next[name]);
+};
+
+interface PersistSnapshotItem {
+  el: HTMLElement;
+  key: string;
+}
+
+/**
+ * patch 前把已挂载的插件容器从 DOM 摘除。
+ * 否则 morphdom 会按 className 把新占位符匹配成同一个节点，并用空占位符的子节点
+ * 覆盖组件已渲染的 DOM，且 MutationObserver 不会重新挂载，表现为插件“打不开”。
+ * 代码块工具栏（.pre-handle）由 onBeforeNodeDiscarded 保护，不在此处理。
+ */
+const detachPersistentNodes = (inner: HTMLElement): PersistSnapshotItem[] => {
+  const items: PersistSnapshotItem[] = [];
+  inner.querySelectorAll(`[${MD_PERSIST_ATTR}]`).forEach((node) => {
+    const el = node as HTMLElement;
+    if (el.classList.contains('pre-handle')) return;
+    // 嵌套容器随最外层一起摘除，避免重复处理
+    if (el.parentElement?.closest(`[${MD_PERSIST_ATTR}]`)) return;
+    items.push({ el, key: getPersistKey(el) });
+    el.remove();
+  });
+  return items;
+};
+
+/**
+ * patch 后把配置未变化的旧组件节点换回到对应占位符的位置；
+ * 配置变化/新增的占位符保留在 DOM 中，由插件自身的 MutationObserver 重新挂载。
+ */
+const restorePersistentNodes = (inner: HTMLElement, items: PersistSnapshotItem[]) => {
+  if (items.length === 0) return;
+  const used = new Set<HTMLElement>();
+  const placeholders = Array.from(inner.querySelectorAll('*')).filter((node) =>
+    Array.from((node as HTMLElement).attributes).some((attr) => attr.name.endsWith('-placeholder')),
+  ) as HTMLElement[];
+
+  placeholders.forEach((placeholder) => {
+    const key = getPersistKey(placeholder);
+    const old = items.find(
+      (item) => item.key === key && !used.has(item.el) && isSamePersistConfig(item.el, placeholder),
+    );
+    if (!old) return;
+    used.add(old.el);
+    placeholder.replaceWith(old.el);
+  });
+};
+
 /**
  * 增量渲染 hook，使用 morphdom 进行部分 DOM 更新。
  *
@@ -76,6 +161,7 @@ export function useIncrementalRender({
   customRenderers,
   throttleMs = 16,
   onNodeDiscarded,
+  onPatched,
 }: UseIncrementalRenderOptions) {
   const [anchors, setAnchors] = useState<AnchorItem[]>([]);
   const [hasContent, setHasContent] = useState(false);
@@ -90,6 +176,8 @@ export function useIncrementalRender({
   const renderSeqRef = useRef(0);
   const onNodeDiscardedRef = useRef<((el: HTMLElement) => void) | undefined>(undefined);
   onNodeDiscardedRef.current = onNodeDiscarded;
+  const onPatchedRef = useRef<(() => void) | undefined>(undefined);
+  onPatchedRef.current = onPatched;
 
   const doRenderAndPatch = useCallback(async (rawContent: string, seq: number) => {
     const text = (!codeType || codeType?.toLocaleLowerCase() === 'md')
@@ -125,6 +213,9 @@ export function useIncrementalRender({
       // childrenOnly 模式：包裹 HTML，只更新子节点
       const wrapper = document.createElement('div');
       wrapper.innerHTML = newHtml;
+
+      // 已挂载插件容器先摘除，patch 后再按配置恢复，避免被占位符清空
+      const persistItems = detachPersistentNodes(inner);
 
       // data-* 快照：morphdom 会移除旧节点上新 HTML 中不存在的 data-* 属性，
       // 导致 JS 守卫位（如 data-click-inited / data-circleBound）丢失，
@@ -174,7 +265,9 @@ export function useIncrementalRender({
           }
         },
       });
+      restorePersistentNodes(inner, persistItems);
       lastContentRef.current = text;
+      onPatchedRef.current?.();
     };
 
     applyPatch();

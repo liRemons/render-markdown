@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useLayoutEffect } from 'react';
 import { CopyFilled, CaretRightOutlined, CaretDownOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
@@ -9,13 +9,92 @@ import { copy } from 'methods-r';
 import classnames from 'classnames';
 import renderMarkdown, { MarkdownPlugin } from './utils/render-markdown';
 import { initImageToolbars, cleanupImageToolbars, addExcludedSelector } from '../ImagePreview';
-import { useIncrementalRender } from '@/hooks/useIncrementalRender';
+import { useIncrementalRender, MD_PERSIST_ATTR } from '@/hooks/useIncrementalRender';
 import './markdown.global.less';
 import './index.global.less';
 import styles from './index.module.less';
 
 /** 记录 initCodeToolbars 中为每个 <pre> 创建的 React Root，防止内存泄漏 */
 const codeRootMap = new Map<HTMLElement, Root>();
+
+type CodeBlockSnapshot = {
+  exact: Map<string, HTMLElement[]>;
+  byLanguage: Map<string, HTMLElement[]>;
+};
+
+/** 代码块身份 key：语言 + 代码原文，用于在重渲染之间匹配代码块 */
+const getCodeBlockKey = (pre: HTMLElement): string | null => {
+  const code = pre.querySelector('code');
+  if (!code) return null;
+  const language = code.className.match(/language-([^\s]+)/)?.[1] ?? '';
+  return language + '\u0000' + (code.textContent ?? '');
+};
+
+/** 重渲染前快照当前 DOM 中的代码块，供非增量模式复用 */
+const snapshotCodeBlocks = (root: HTMLElement | null): CodeBlockSnapshot => {
+  const exact = new Map<string, HTMLElement[]>();
+  const byLanguage = new Map<string, HTMLElement[]>();
+  root?.querySelectorAll('pre').forEach((node) => {
+    const pre = node as HTMLElement;
+    const code = pre.querySelector('code');
+    if (!code) return;
+    const key = getCodeBlockKey(pre);
+    if (key) {
+      const list = exact.get(key);
+      if (list) list.push(pre);
+      else exact.set(key, [pre]);
+    }
+    const language = code.className.match(/language-([^\s]+)/)?.[1] ?? '';
+    const langList = byLanguage.get(language);
+    if (langList) langList.push(pre);
+    else byLanguage.set(language, [pre]);
+  });
+  return { exact, byLanguage };
+};
+
+/**
+ * 非增量模式每次内容变化都会整体替换 innerHTML，代码块连同复制/折叠工具栏
+ * 会被销毁重建，表现为代码区域闪烁。这里把未变化的 <pre> 节点换回；
+ * 内容变化但语言相同的代码块复用节点并原地更新 <code>，保住工具栏与语言图标。
+ */
+const restoreCodeBlocks = (inner: HTMLDivElement | null, snapshot: CodeBlockSnapshot | null) => {
+  if (!inner || !snapshot) return;
+  const pres = Array.from(inner.querySelectorAll('pre')) as HTMLElement[];
+  const reused = new Set<HTMLElement>();
+
+  // 1) 语言 + 内容都相同：直接复用旧节点
+  pres.forEach((newPre) => {
+    const key = getCodeBlockKey(newPre);
+    if (!key) return;
+    const oldPre = snapshot.exact.get(key)?.shift();
+    if (!oldPre || oldPre === newPre) return;
+    reused.add(oldPre);
+    newPre.replaceWith(oldPre);
+  });
+
+  // 2) 内容变化的代码块：按语言顺序复用旧节点，只替换 <code> 内部
+  pres.forEach((newPre) => {
+    if (!newPre.isConnected) return;
+    const newCode = newPre.querySelector('code');
+    if (!newCode) return;
+    const language = newCode.className.match(/language-([^\s]+)/)?.[1] ?? '';
+    const queue = snapshot.byLanguage.get(language);
+    if (!queue?.length) return;
+    let oldPre: HTMLElement | undefined;
+    while (queue.length) {
+      const candidate = queue.shift()!;
+      if (candidate !== newPre && !reused.has(candidate)) {
+        oldPre = candidate;
+        break;
+      }
+    }
+    if (!oldPre) return;
+    reused.add(oldPre);
+    const oldCode = oldPre.querySelector('code');
+    if (oldCode) oldCode.innerHTML = newCode.innerHTML;
+    newPre.replaceWith(oldPre);
+  });
+};
 
 /** Mermaid 渲染防抖延迟（ms）默认值。content 停止变化超过该时间后才统一渲染图表，避免 SSE 打字机过程中闪烁 */
 const DEFAULT_MERMAID_DEBOUNCE = 10;
@@ -118,28 +197,61 @@ export interface RenderMarkdownProps {
 }
 
 
+/** 从 class 中提取代码语言（code 上还会挂 copy-id / mermaid 等动态 class） */
+const getCodeLanguage = (code: HTMLElement): string =>
+  code.className.match(/language-([^\s]+)/)?.[1] ?? '';
+
 const initCodeToolbars = (props: Pick<RenderMarkdownProps, 'isSlotMermaid' | 'isShowCollapsed' | 'isPrintPreview'>) => {
   const { isSlotMermaid = true, isShowCollapsed = true } = props;
   document.querySelectorAll('.markdown-html code[class*="language-"]').forEach((item) => {
-    const codeType = item.className.replace('language-', '').trim();
+    const code = item as HTMLElement;
+    const codeType = getCodeLanguage(code);
     const slotMermaidClassName = (isSlotMermaid && codeType === 'mermaid') ? 'mermaid-render-noCode' : ''
-    const copyId = `copy-${crypto.randomUUID()}`;
-    const preNode = item.parentNode as HTMLElement;
+    const preNode = code.parentNode as HTMLElement | null;
+    if (!preNode) return;
 
-    if (preNode?.querySelector('.pre-handle')) {
-      return
+    const existing = preNode.querySelector('.pre-handle') as HTMLElement | null;
+    if (existing) {
+      // 增量 patch 后同步：morphdom 会用新 HTML 的 class 覆盖 <code>，
+      // 导致复制按钮依赖的 copy-id 与 mermaid 标记被删除
+      const copyId = existing.getAttribute('data-md-copy-id');
+      if (copyId && !code.classList.contains(copyId)) {
+        code.classList.add(copyId);
+      }
+      if (slotMermaidClassName) {
+        code.classList.add(slotMermaidClassName);
+      } else {
+        code.classList.remove('mermaid-render-noCode');
+      }
+      const langEl = existing.querySelector('[data-md-lang]');
+      if (langEl && langEl.textContent !== codeType) {
+        langEl.textContent = codeType;
+      }
+      // 折叠按钮配置未变化时保持复用；变化时重建该工具栏
+      if (existing.getAttribute('data-md-show-collapsed') === String(isShowCollapsed)) {
+        return;
+      }
+      codeRootMap.get(existing)?.unmount();
+      codeRootMap.delete(existing);
+      existing.remove();
+    }
+
+    const copyId = `copy-${crypto.randomUUID()}`;
+    code.classList.add(copyId);
+    if (slotMermaidClassName) {
+      code.classList.add(slotMermaidClassName);
     }
     const handleDOM = document.createElement('div');
     handleDOM.className = 'pre-handle';
-    const code = preNode?.querySelector<HTMLPreElement>('code');
-    code?.classList.add(copyId)
-    if (slotMermaidClassName) {
-      code?.classList.add(slotMermaidClassName)
-    }
-    preNode?.insertBefore(handleDOM, preNode.querySelector('code'));
+    // 持久节点标记：增量 patch 时 morphdom 不会丢弃工具栏，避免每键重建
+    handleDOM.setAttribute(MD_PERSIST_ATTR, '');
+    handleDOM.setAttribute('data-md-copy-id', copyId);
+    handleDOM.setAttribute('data-md-show-collapsed', String(isShowCollapsed));
+    preNode.insertBefore(handleDOM, code);
+
     const codeTypeDOM = <>
       <img src="https://remons.cn:3008/upload/md_assets/code_icon.png" alt="" />
-      <span>{codeType}</span>
+      <span data-md-lang>{codeType}</span>
     </>
 
     const copyDOM = <span className="copy" onClick={() => {
@@ -180,6 +292,8 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   const [activeId, setActiveId] = useState('');
   const [showToc, setShowToc] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const innerDivRef = useRef<HTMLDivElement | null>(null);
+  const preSnapshotRef = useRef<CodeBlockSnapshot | null>(null);
 
   // 用 ref 存储最新 props，避免 useEffect 闭包陈旧问题
   const propsRef = useRef(props);
@@ -201,6 +315,12 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     });
   }, []);
 
+  // 增量 patch 完成后立即同步代码块工具栏：
+  // morphdom 会用新 HTML 的 class 覆盖 <code>，导致 copy-id / mermaid 标记丢失
+  const handlePatched = useCallback(() => {
+    initCodeToolbars(propsRef.current);
+  }, []);
+
   // 增量渲染：使用 morphdom 进行 DOM 差异化更新
   const { anchors: incAnchors, hasContent, setInnerRef } = useIncrementalRender({
     content,
@@ -208,6 +328,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     customRenderers: props.customRenderers,
     throttleMs: incrementalThrottleMs,
     onNodeDiscarded: handleNodeDiscarded,
+    onPatched: handlePatched,
   });
 
   // 合并两种模式的 anchors
@@ -223,6 +344,8 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     const init = async () => {
       // 非增量模式：先渲染 markdown，增量模式在 hook 中处理
       if (!useIncremental) {
+        // 替换前快照代码块节点，供 layout 阶段复用，避免代码区域整体重建
+        preSnapshotRef.current = snapshotCodeBlocks(containerRef.current);
         const { codeType } = propsRef.current;
         let text = '';
         if (!codeType || codeType?.toLocaleLowerCase() === 'md') {
@@ -263,25 +386,35 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       cancelled = true;
       if (toolbarMermaidTimer) clearTimeout(toolbarMermaidTimer);
 
-      // 非增量模式：卸载代码工具栏 React Root 和清理图片工具栏
+      // 非增量模式：只清理图片工具栏；代码块工具栏随复用保留，
+      // 由 layout 阶段的 disconnected 检查按需回收
       if (!useIncremental) {
-        codeRootMap.forEach((root, handleDOM) => {
-          root.unmount();
-          handleDOM.remove();
-        });
-        codeRootMap.clear();
         cleanupImageToolbars();
       }
     };
   }, [content]);
 
-  // 组件卸载（增量模式）：清理本容器内已挂载的代码工具栏 Root
+  // 非增量模式：dangerouslySetInnerHTML 会整体重建预览 DOM。在浏览器绘制前
+  // 把未变化的代码块节点（含工具栏）换回，避免代码区域闪烁。
+  useLayoutEffect(() => {
+    if (useIncremental || !html) return;
+    restoreCodeBlocks(innerDivRef.current, preSnapshotRef.current);
+    preSnapshotRef.current = null;
+    // 清理未被复用、已随旧 DOM 一起被替换掉的代码块工具栏 Root
+    codeRootMap.forEach((root, handle) => {
+      if (!handle.isConnected) {
+        root.unmount();
+        codeRootMap.delete(handle);
+      }
+    });
+  }, [html, useIncremental]);
+
+  // 组件卸载：清理本容器内已挂载的代码工具栏 Root
   // （codeRootMap 是模块级、document 维度的，只清理当前容器，避免误伤其他实例）
   const unmountSnapshotRef = useRef<HTMLElement | null>(null);
   unmountSnapshotRef.current = containerRef.current;
   useEffect(() => {
     return () => {
-      if (!propsRef.current.useIncremental) return;
       const container = unmountSnapshotRef.current;
       if (!container) return;
       container.querySelectorAll('.pre-handle').forEach((h) => {
@@ -358,7 +491,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   // 根据模式确定 inner div 的属性
   const innerProps = useIncremental
     ? { ref: setInnerRef as any }
-    : { dangerouslySetInnerHTML: { __html: html } };
+    : { ref: innerDivRef, dangerouslySetInnerHTML: { __html: html } };
 
   return (
     <div className='markdown'>
