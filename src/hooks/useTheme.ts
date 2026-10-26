@@ -1,10 +1,12 @@
-﻿import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+﻿import React, { createContext, useContext, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
+
+export type ThemeMode = "light" | "dark" | "system";
 
 export interface UseThemeReturn {
   theme: string;
-  mode: string;
+  mode: ThemeMode;
   isDark: boolean;
-  setMode: (mode: string) => void;
+  setMode: (mode: ThemeMode) => void;
 }
 
 export interface ThemeProviderProps {
@@ -21,15 +23,19 @@ function getSystemTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? THEME_DARK : THEME_LIGHT;
 }
 
-function getStoredMode() {
+function isThemeMode(value: unknown): value is ThemeMode {
+  return value === THEME_LIGHT || value === THEME_DARK || value === THEME_SYSTEM;
+}
+
+function getStoredMode(): ThemeMode {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === THEME_LIGHT || stored === THEME_DARK || stored === THEME_SYSTEM) return stored;
+    if (isThemeMode(stored)) return stored;
   } catch {}
   return THEME_SYSTEM;
 }
 
-function resolveTheme(mode: string) {
+function resolveTheme(mode: ThemeMode) {
   return mode === THEME_SYSTEM ? getSystemTheme() : mode;
 }
 
@@ -38,20 +44,39 @@ function applyTheme(theme: string) {
   document.documentElement.dataset.theme = theme;
 }
 
-// 初始化脚本：在 React 加载前执行，防 FOUC（也内联在 index.ejs 中）
-if (typeof window !== "undefined") {
-  const mode = getStoredMode();
-  const theme = resolveTheme(mode);
-  applyTheme(theme);
+/**
+ * 同步应用已存储的主题（防 FOUC）。
+ * 库不再在 import 时产生全局副作用；使用方需在应用入口（或 index.html 内联脚本）主动调用。
+ */
+export function initTheme(): void {
+  if (typeof window === "undefined") return;
+  applyTheme(resolveTheme(getStoredMode()));
 }
 
 const ThemeContext = createContext<UseThemeReturn | null>(null);
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [mode, setModeState] = useState(() => getStoredMode());
-  const [theme, setTheme] = useState(() => resolveTheme(mode));
+  const [mode, setModeState] = useState<ThemeMode>(() => getStoredMode());
+  const [theme, setTheme] = useState<string>(() => resolveTheme(mode));
+  /** 记录自身最后一次写入 data-theme 的值；MutationObserver 是异步回调，无法用布尔开关防回环 */
+  const lastSelfAppliedRef = useRef<string | null>(null);
 
-  const setMode = useCallback((newMode: string) => {
+  /** 由本 Provider 主动应用主题，并登记来源，供外部变更同步时排除自身写入 */
+  const applyThemeSelf = useCallback((next: string) => {
+    lastSelfAppliedRef.current = next;
+    applyTheme(next);
+  }, []);
+
+  // 首次挂载即应用主题，保证无 ThemeProvider 外部脚本时也能生效
+  useLayoutEffect(() => {
+    applyThemeSelf(resolveTheme(getStoredMode()));
+  }, [applyThemeSelf]);
+
+  const setMode = useCallback((newMode: ThemeMode) => {
+    if (!isThemeMode(newMode)) {
+      console.warn(`[render-markdown] 非法的主题模式: ${newMode}，应为 light | dark | system`);
+      return;
+    }
     setModeState(newMode);
     try {
       localStorage.setItem(THEME_KEY, newMode);
@@ -62,8 +87,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     const resolved = resolveTheme(mode);
     setTheme(resolved);
-    applyTheme(resolved);
-  }, [mode]);
+    applyThemeSelf(resolved);
+  }, [mode, applyThemeSelf]);
 
   useEffect(() => {
     if (mode !== THEME_SYSTEM) return;
@@ -71,11 +96,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const handler = (e: MediaQueryListEvent) => {
       const t = e.matches ? THEME_DARK : THEME_LIGHT;
       setTheme(t);
-      applyTheme(t);
+      applyThemeSelf(t);
     };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
-  }, [mode]);
+  }, [mode, applyThemeSelf]);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -86,14 +111,12 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     };
     window.addEventListener("storage", handleStorage);
 
+    // 同步外部（使用方自行写 data-theme）变更；跳过自身写入，防多个 Provider 乒乓
     const observer = new MutationObserver(() => {
       const currentTheme = document.documentElement.dataset.theme;
-      if (currentTheme && currentTheme !== theme) {
+      if (currentTheme === lastSelfAppliedRef.current) return;
+      if ((currentTheme === THEME_LIGHT || currentTheme === THEME_DARK) && currentTheme !== theme) {
         setTheme(currentTheme);
-        const newMode = getStoredMode();
-        if (newMode !== mode) {
-          setModeState(newMode);
-        }
       }
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });

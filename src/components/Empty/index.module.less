@@ -1,5 +1,5 @@
-﻿@import (reference) "../../assets/css/variables.css";
-
+﻿/* 不写 `@import (reference) ".../variables.css"`：那是 CSS 文件里的自定义属性，不是 Less 变量，
+   reference 导入不会产出任何内容，也不会让 var(--…) 更容易解析（全局早就带着变量定义了） */
 .empty_container {
   height: 100%;
   display: flex;

@@ -23,38 +23,33 @@ type Data = Array<{
   id: string;
 }>
 
-/** 当前正在展示的 driver 实例与索引，防止重复调用导致多个引导同时打开 */
+/** 当前正在展示的 driver 实例 */
 let activeDriver: ReturnType<typeof driver> | null = null;
 
-/** 
- * ✅ 新增：在模块作用域保存最新的 data 
- * 这样即使 driverRender 被拦截，onDestroyed 也能拿到最新的数据
- */
-let latestData: Data = [];
+/** 已完成/已放弃的引导队列（按调用方传入的 data 数组引用识别），同一队列不重复弹出 */
+const completedQueues = new WeakSet<object>();
 
 /**
  * 用于渲染引导
  * @param data 引导数据，数组结构，每一项为一个引导
+ *
+ * 语义：同一 data 引用只完整播放一次；播放过程中重复调用会被忽略（不再中途改写队列数据，
+ * 避免旧实现的 latestData 竞态：播放中更新 data 导致步骤与队列错位）。
  */
 export default function driverRender(data: Data) {
-  // ✅ 每次调用时，无论是否被拦截，都先更新最新的 data
-  latestData = data;
-
-  // 已有引导正在展示
-  if (activeDriver) {
+  // 已有引导正在展示，或该队列已播放过
+  if (activeDriver || completedQueues.has(data)) {
     return;
   }
 
   const renderGuide = (index: number) => {
-    // ✅ 每次执行时，都从外部读取最新的 data
-    const currentData = latestData;
-
-    if (index >= currentData.length) {
+    if (index >= data.length) {
       activeDriver = null;
+      completedQueues.add(data);
       return;
     }
 
-    const current = currentData[index];
+    const current = data[index];
 
     // 检查 condition，若不成立则跳过当前引导，渲染下一个
     if (current.condition && !current.condition()) {
@@ -63,6 +58,14 @@ export default function driverRender(data: Data) {
     }
 
     current?.onOpen?.();
+
+    // 只保留当前文档中真实存在的步骤元素：引导配置可能来自宿主应用，
+    // 元素不存在时 driver.js 会报错中断整个引导
+    const steps = current.steps.filter((step) => step.isShow !== false && !!document.querySelector(step.element));
+    if (steps.length === 0) {
+      renderGuide(index + 1);
+      return;
+    }
 
     const driverObj = driver({
       nextBtnText: '下一步',
@@ -75,7 +78,7 @@ export default function driverRender(data: Data) {
         activeDriver = null;
         renderGuide(index + 1);
       },
-      steps: current.steps.filter(step => step.isShow !== false) || [] // 过滤掉 isShow 为 false 的步骤,
+      steps
     });
     activeDriver = driverObj;
     driverObj.drive();

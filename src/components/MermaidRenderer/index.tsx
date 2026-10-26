@@ -64,14 +64,27 @@ interface MermaidRendererProps {
    */
   isPrintPreview?: boolean;
   /**
-   * 自定义配置函数，对渲染前 text 进行修改
-   * @returns 
+   * 渲染前对图表源码进行改写（初始化语义：仅首次传入生效）
+   */
+  transformSource?: (text: string) => string;
+  /**
+   * @deprecated 旧名，等价于 transformSource
    */
   chartConfig?: (text: string) => string;
   /**
-   * 自定义 CDN 配置，如 { mermaid: 'https://...' }
+   * mermaid 安全级别，默认 'strict'（禁用图内点击事件/原始 HTML）。
+   * 仅当完全信任图表来源时才设为 'loose'。
+   */
+  securityLevel?: 'strict' | 'loose';
+  /**
+   * 自定义 CDN 配置，如 { mermaid: 'https://...' }（初始化语义：全局仅加载一次）
    */
   cdn?: Record<string, string>;
+  /**
+   * 新手引导是否每个元素只触发一次（默认 true）。
+   * 流式重渲染场景下设为 false 会反复弹引导。
+   */
+  driverGuideOnce?: boolean;
 }
 
 // ==================== 统一 Mermaid 渲染组件 ====================
@@ -87,11 +100,22 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   minHeight = 200,
   showDriverGuide,
   isPrintPreview = false,
+  transformSource,
   chartConfig,
+  securityLevel,
   cdn,
+  driverGuideOnce = true,
 }) {
   const { isDark } = useTheme();
-  const { svg, error, loading } = useMermaidRender({ source, debounceMs, isDark, chartConfig, cdn });
+  const { svg, error, loading } = useMermaidRender({
+    source,
+    debounceMs,
+    isDark,
+    transformSource,
+    chartConfig,
+    securityLevel,
+    cdn,
+  });
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -121,18 +145,25 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   const isPanzoomAvailable = enablePanzoom && (isFullscreen || !isCollapsed || !showCollapse);
   const isPanzoomActive = isPanzoomAvailable && isPanzoomEnabled;
   const panzoomRef = usePanzoom({
-    contentRef, wrapperRef,
-    enabled: isPanzoomActive && !!svg && !isPrintPreview,
-    svg,
+    contentRef,
+    wrapperRef,
+    // 实例只跟“能不能缩放”挂钩；折叠/展开、图表重渲染只解绑事件，不重置位姿
+    canUse: enablePanzoom && !!svg && !isPrintPreview,
+    active: isPanzoomActive,
     isFullscreen,
   });
 
-  // 新手引导
+  // 新手引导：默认每个元素只触发一次，避免流式重渲染反复弹引导
   useEffect(() => {
-    if (showDriverGuide && !isPrintPreview) {
-      driverRender(getDriverConfig(showSourceView, !!svg));
+    if (!showDriverGuide || isPrintPreview || !svg) return;
+    const el = wrapperRef.current;
+    if (!el) return;
+    if (driverGuideOnce) {
+      if (el.dataset.mdDriverDone) return;
+      el.dataset.mdDriverDone = '1';
     }
-  }, [svg, showDriverGuide, isPrintPreview, showSourceView]);
+    driverRender(getDriverConfig(showSourceView, !!svg));
+  }, [svg, showDriverGuide, isPrintPreview, showSourceView, driverGuideOnce]);
 
   const title = extractMermaidTitle(source);
 
@@ -232,7 +263,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
           onCancel={() => setShowSource(false)}
           footer={null}
         >
-          <RenderMarkdown isShowCollapsed={false} isSlotMermaid={false} codeType='mermaid' content={source} />
+          <RenderMarkdown showCollapseButton={false} enableMermaid={false} codeType='mermaid' content={source} />
         </CustomModal>
       )}
     </div>
@@ -241,15 +272,25 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
 
 export default MermaidRenderer;
 
-// ==================== DOM 扫描入口（文档页使用） ====================
+// ==================== 对外导出 ====================
 import renderMermaidWithControls from './renderMermaidWithControls';
 
-const renderMermaid = (props: MermaidRendererProps) => {
-  return (
-    <ThemeProvider>
-      <MermaidRenderer {...props} />
-    </ThemeProvider>
-  )
-}
+/**
+ * 带主题容器的图表组件（推荐直接使用）：
+ * 作为 JSX 元素类型稳定，父组件重渲染不会导致子树卸载重建；自带 ThemeProvider，
+ * 应用未包主题上下文时也能直接渲染。
+ * 旧用法 renderMermaid({...}) 返回 JSX 的方式每次调用都生成新元素类型，
+ * 会造成重渲染时完整卸载重建，已标废。
+ */
+export const MermaidChart: React.FC<MermaidRendererProps> = (props) => (
+  <ThemeProvider>
+    <MermaidRenderer {...props} />
+  </ThemeProvider>
+);
+
+/**
+ * @deprecated 请改用组件形式 <MermaidChart {...} />；函数调用返回 JSX 会在父组件重渲染时重置子树状态
+ */
+const renderMermaid = (props: MermaidRendererProps) => <MermaidChart {...props} />;
 
 export { renderMermaidWithControls, renderMermaid };

@@ -5,7 +5,8 @@
   width: 280px;
   max-height: calc(100vh - 120px);
   background: var(--remons-markdown-color-toc);
-  backdrop-filter: blur(10px) !important;
+  /* 不需要 !important：本库内没有第二处 backdrop-filter 与它竞争 */
+  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 8px;
   box-shadow: var(--remons-markdown-shadow-sm);

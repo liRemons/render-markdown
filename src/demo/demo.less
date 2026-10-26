@@ -1,0 +1,150 @@
+/** 示例页布局样式（与库样式无关，仅演示容器） */
+
+.demo-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+  font-family: var(--remons-markdown-font-family-base);
+  color: var(--remons-markdown-color-text-primary);
+}
+
+html[data-theme='dark'] body {
+  background: #12141f;
+}
+
+.demo-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.demo-title {
+  margin: 0 0 4px;
+  font-size: 26px;
+}
+
+.demo-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--remons-markdown-color-text-secondary);
+}
+
+.demo-themeSwitcher {
+  display: flex;
+  gap: 8px;
+}
+
+.demo-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--remons-markdown-color-border);
+  border-radius: 999px;
+  background: var(--remons-markdown-color-bg-card);
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.demo-chip-active {
+  border-color: var(--remons-markdown-color-primary);
+  color: var(--remons-markdown-color-primary);
+}
+
+.demo-section {
+  margin-bottom: 32px;
+}
+
+.demo-sectionTitle {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+
+.demo-desc {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--remons-markdown-color-text-secondary);
+
+  code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--remons-markdown-color-bg-hover);
+    font-family: var(--remons-markdown-font-family-editor);
+    font-size: 12px;
+  }
+}
+
+.demo-card {
+  border: 1px solid var(--remons-markdown-color-border);
+  border-radius: 10px;
+  background: var(--remons-markdown-color-bg);
+  overflow: hidden;
+  position: relative;
+}
+
+.demo-card--tall {
+  max-height: 720px;
+  overflow-y: auto;
+}
+
+.demo-cardTitle {
+  margin: 0;
+  padding: 12px 16px 0;
+  font-size: 14px;
+  color: var(--remons-markdown-color-text-secondary);
+}
+
+.demo-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.demo-grid--2 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .demo-grid--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.demo-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.demo-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--remons-markdown-color-primary);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.demo-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.demo-progress,
+.demo-stat {
+  font-size: 13px;
+  color: var(--remons-markdown-color-text-secondary);
+}

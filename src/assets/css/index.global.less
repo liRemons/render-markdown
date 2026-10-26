@@ -1,52 +1,51 @@
-﻿@import './variables.css';
+﻿/*
+ * 远程字体样式表：Inter（拉丁）+ Noto Sans SC（中文），对应 variables.css 里的
+ * --remons-markdown-font-family-base 字体栈。
+ *
+ * 必须是本文件的第一条声明：CSS 的 @import 只能出现在其他规则之前，而下一行的
+ * './variables.css' 会被构建内联展开成一大段规则 —— 上一版远程字体写在它后面，
+ * 于是产物里的 minified CSS 根本查不到这条 @import（dev 生效、build 不生效）。
+ * 改完已核对 dist/index.css：该条确实保留在最顶部。
+ *
+ * 注意：这是境外 CDN，使用方内网/合规环境如无法访问，会回退到字体栈后面的
+ * 系统字体（-apple-system / Segoe UI / PingFang SC / Microsoft YaHei），不会破版。
+ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+@import './variables.css';
 
-/* Less 变量 */
-@ruler: 16px;
-
-/* ===== 深色模式全局覆盖 ===== */
-[data-theme='dark'] {
-
-  /* mermaid 容器背景 */
-  .mermaid-wrapper,
-  .mermaid-loading,
-  .mermaid-fullscreen-target {
-    background-color: #2e3350 !important;
-  }
-
-  /* mermaid 全屏背景 */
-  .mermaid-fullscreen-target:fullscreen {
-    background: #1a1d2e !important;
-  }
-}
-
+/* mermaid 容器的深色背景由 variables.css 的 --remons-markdown-mermaid-surface 统一控制，
+   不再在此用 !important 去盖组件里的 var（旧写法与 token 打优先级战争，深色覆盖也散落两处） */
 
 .remons-markdown-circle {
-  margin: 0;
+  margin: 0 6px 0 0;
+  padding: 0;
   width: 40px;
   height: 40px;
-  border-radius: 100% !important;
+  border-radius: 100%;
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   background-color: var(--remons-markdown-color-button);
-  padding: 0;
-  text-align: center;
-  margin-right: 6px;
-  display: inline-block;
-  box-shadow: var(--remons-markdown-shadow-sm) !important;
-  transition: shadow 0.2s ease-in-out;
+  box-shadow: var(--remons-markdown-shadow-sm);
+  /* 上一版写的是 transition: shadow（shadow 不是 CSS 属性），hover/active 的阴影变更本没过渡 */
+  transition: box-shadow 0.2s ease-in-out;
   cursor: pointer;
   display: inline-flex;
   justify-content: center;
   align-items: center;
   border: 1px solid var(--remons-markdown-color-button-border);
 
+  /*
+   * 以下一律不带 !important：本库内的尺寸覆盖（图表工具栏 24px / TOC 22px）都是靠
+   * 更高的特异度做的，并不碰阴影与圆角；上一版的 !important 只会让使用方定制按钮时
+   * 只能也上 !important。
+   */
   &:hover {
     box-shadow: -2px -2px 5px var(--remons-markdown-color-shadow-light),
-      2px 2px 5px var(--remons-markdown-color-shadow) !important;
+      2px 2px 5px var(--remons-markdown-color-shadow);
   }
 
   &:active {
-    box-shadow: var(--remons-markdown-shadow-inset) !important;
+    box-shadow: var(--remons-markdown-shadow-inset);
   }
 
   &:last-child {
@@ -57,7 +56,7 @@
 @media screen and (max-width: 500px) {
   .remons-markdown-circle {
     box-shadow: -2px -2px 10px var(--remons-markdown-color-shadow-light),
-      2px 2px 10px var(--remons-markdown-color-shadow) !important;
+      2px 2px 10px var(--remons-markdown-color-shadow);
 
     width: 30px;
     height: 30px;

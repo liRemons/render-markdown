@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import classnames from 'classnames';
 import { RightOutlined, DownOutlined, SearchOutlined, CloseOutlined } from '@ant-design/icons';
 import styles from './index.module.less';
@@ -235,4 +235,6 @@ function TocSidebar({ anchors, activeId, visible, onClose }: TocSidebarProps) {
   );
 }
 
-export default TocSidebar;
+// memo：anchors/activeId/visible/onClose 均为稳定引用时跳过重渲染，
+// 配合 RenderMarkdown 的稳定回调，避免正文输入时整棵递归目录树重建
+export default memo(TocSidebar);

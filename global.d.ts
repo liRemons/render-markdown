@@ -19,13 +19,11 @@ declare module '*.svg' {
   export default src;
 }
 
-declare module 'uslug';
-declare module 'markdown-it';
+/* markdown-it 15 自带 TypeScript 类型，不再用 declare module 覆盖为 any
+   （之前覆盖后，md.render(tokens) 这类误用无法被 tsc 拦住） */
 declare module 'markdown-it-anchor';
-declare module 'markdown-it-toc-done-right';
 declare module 'markdown-it-link-attributes';
 declare module '@mdit/plugin-tab';
-declare module 'lodash.clonedeep';
 declare module 'methods-r';
 declare module 'highlight.js/lib/core';
 declare module 'highlight.js/lib/languages/javascript';
@@ -37,4 +35,7 @@ declare module 'highlight.js/lib/languages/css';
 declare module 'highlight.js/lib/languages/plaintext';
 declare module 'highlight.js/lib/languages/less';
 declare module 'highlight.js/lib/languages/typescript';
+declare module 'highlight.js/lib/languages/python';
+declare module 'highlight.js/lib/languages/go';
 declare module 'markdown-it-task-lists';
+declare module 'markdown-it-github-alerts';

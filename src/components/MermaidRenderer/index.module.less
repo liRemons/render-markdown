@@ -1,6 +1,4 @@
-﻿@import (reference) "../../assets/css/variables.css";
-
-/* 预览区域 */
+﻿/* 预览区域 */
 .previewArea {
   width: 100%;
   height: 100%;
@@ -13,13 +11,10 @@
   &:active {
     cursor: grabbing;
   }
-
-  &:fullscreen {
-    width: 100vw;
-    height: 100vh;
-    cursor: grab;
-  }
 }
+
+/* 全屏元素是外层 wrapper（见 useMermaidControls 的 requestFullscreen），
+   并非本预览区，因此不需要在此写 :fullscreen 尺寸 */
 
 :global(.mermaid-mini) {
   .previewArea {
@@ -34,10 +29,13 @@
 }
 
 .previewAreaDisabled {
-  cursor: default !important;
+  /* 不用 !important：写成双 class 就比 .previewArea 与 .previewArea:active 都高 */
+  &.previewArea {
+    cursor: default;
 
-  &:active {
-    cursor: default !important;
+    &:active {
+      cursor: default;
+    }
   }
 }
 
@@ -94,19 +92,18 @@
   .mermaid-wrapper,
   .mermaid-loading {
     overflow: hidden;
-    background-color: var(--remons-markdown-color-bg-card, #f8f9fa);
-    border-radius: 8px;
+    /* 表面色交给主题 token（浅色透明 / 深色实色）；旧写法在这里写 var(--color-bg-card)，
+       然后在 assets/css/index.global.less 里用 #2e3350 !important 盖掉它 —— 同一个颜色
+       分散两处、还靠优先级相拼 */
+    background-color: var(--remons-markdown-mermaid-surface, transparent);
+    border-radius: var(--remons-markdown-radius-base);
     position: relative;
     border: 1px solid var(--remons-markdown-color-border, #e4e4e4);
     box-sizing: border-box;
-    transition: all 0.3s ease-in-out;
+    transition: max-height 0.3s ease-in-out, background-color 0.3s ease-in-out;
 
     &.mermaid-mini {
       max-height: 36px;
-    }
-
-    .mermaid-content.disabled-move {
-      cursor: initial !important;
     }
 
     &.print-preview {
@@ -124,13 +121,31 @@
         height: 28px;
         pointer-events: none;
         content: "";
-        background: linear-gradient(to bottom, transparent, var(--remons-markdown-color-bg, #ebebeb));
+        /* 渐隐终点必须是实体表面色：旧写法用的 --remons-markdown-color-bg 在浅色下就是
+           transparent，于是 transparent 渐变到 transparent，遮罩永不可见 */
+        background: linear-gradient(to bottom, transparent, var(--remons-markdown-color-bg-white));
       }
     }
   }
 
-  .mermaid-wrapper-fullscreen {
-    background: var(--remons-markdown-bg-gradient);
+  /* 全屏容器：此 class 仅在本实例进入全屏时由 JS 添加（旧 .mermaid-fullscreen-target 从未被使用）。
+     写双 class 提升特异度，使其能稳定盖过上面的 .mermaid-wrapper 背景，不需要 !important */
+  .mermaid-wrapper.mermaid-wrapper-fullscreen {
+    background: var(--remons-markdown-mermaid-fullscreen-bg);
+
+    /* 防御：.mermaid-collapsed 的 max-height: 200px 会压住全屏高度 */
+    &.mermaid-collapsed {
+      max-height: none;
+    }
+
+    &:fullscreen {
+      overflow: hidden;
+
+      .mermaid-toolbar {
+        top: 4px;
+        right: 8px;
+      }
+    }
   }
 
   .mermaid-loading {
@@ -208,57 +223,33 @@
     margin-right: 10px;
   }
 
-  .mermaid-fullscreen-target:fullscreen {
-    background: var(--remons-markdown-color-bg-white, #fff);
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-
-    .mermaid-content {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .mermaid-toolbar {
-      top: 4px;
-      right: 8px;
-    }
-  }
-
-  .mermaid-content {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
+  /* 第三方（driver.js）自带弹层样式，只能靠 !important 抢回来 */
   .driver-popover {
     button {
       box-shadow: none !important;
     }
   }
 
+  /*
+   * 源码弹窗调优。
+   * 旧写法写的是 `.ant-modal-header` / `.ant-modal-content` —— 本库没有 antd 依赖
+   * （只有 peer 的 @ant-design/icons），弹窗是自研 CustomModal，结构是
+   * `.modal > .modal-header / .modal-body`，而且那些类名被 CSS Modules 哈希了，
+   * 外部选择器根本够不到 —— 所以那两条规则一直是死 CSS，预期的「正文不要内边距」
+   * 从未生效（.markdown 带着自己的 10px 8px 18px 叠加在 .modal-body 的 6px 上）。
+   * 现在只稳定命中 .markdown，把旧意图（内容区约 20px/10px 净留白）折算上去：
+   * .modal-body 已有 6px，这里给 14px 4px。
+   */
   .mermaid-code-modal {
-    .ant-modal-header {
-      margin: 0;
-    }
-
-    .ant-modal-content {
-      padding: 20px 10px;
-
-      .markdown {
-        padding: 0;
-      }
+    .markdown {
+      padding: 14px 4px;
     }
   }
 
   @media screen and (max-width: 500px) {
     .mermaid-title {
-      font-size: 12px !important;
+      /* 无需 !important：.mermaid-title 本来就没定义 font-size，不存在要争的声明 */
+      font-size: 12px;
     }
   }
 }

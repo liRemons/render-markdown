@@ -16,7 +16,8 @@ let loadPromise: Promise<void> | null = null;
 export function ensureKatexLoaded(timeout = 15_000): Promise<void> {
   if (loadPromise) return loadPromise;
 
-  if (typeof document === 'undefined' || typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
+    // SSR 环境不缓存：避免把 rejected Promise 永久挂住导致后续调用全部失败
     return Promise.reject(
       new Error('[katex-loader] Requires a browser environment.')
     );
@@ -29,6 +30,23 @@ export function ensureKatexLoaded(timeout = 15_000): Promise<void> {
       loadPromise = null;
       reject(new Error(`[katex-loader] KaTeX CDN timeout after ${timeout}ms.`));
     }, timeout);
+
+    // 页面/其他实例已注入过脚本（如手动预加载）：避免重复注入导致 window.katex 被覆盖
+    const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${KATEX_JS_URL}"]`);
+    if (existingScript) {
+      if (window.katex) {
+        clearTimeout(timer);
+        resolve();
+        return;
+      }
+      existingScript.addEventListener('load', () => { clearTimeout(timer); resolve(); });
+      existingScript.addEventListener('error', () => {
+        clearTimeout(timer);
+        loadPromise = null;
+        reject(new Error(`[katex-loader] Failed to load ${KATEX_JS_URL}`));
+      });
+      return;
+    }
 
     // CSS（幂等）
     if (!document.querySelector(`link[href="${KATEX_CSS_URL}"]`)) {

@@ -1,7 +1,7 @@
 import defaultCdn from './cdn';
 
 /**
- * 获取 jsMap（默认配置）
+ * 可预加载的资源名→URL 映射（引用全局默认 CDN 配置，registerCdn 后自动生效）
  */
 export const jsMap: Record<string, string> = defaultCdn;
 

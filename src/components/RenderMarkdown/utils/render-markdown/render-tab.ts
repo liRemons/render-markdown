@@ -1,180 +1,139 @@
 /**
  * 初始化 Tab 逻辑
- * 使用递归思想：只处理当前容器下的直接子元素，互不干扰
+ * 交互统一挂在 document 上做事件委托：天然覆盖所有 RenderMarkdown 实例，
+ * 多实例不再互相抢占第一个 .markdown 容器；增量渲染重建 DOM 后也无需重绑。
  */
 
 export const tabsName = 'markdown-tabs';
 
-/** 模块级存储 observer 和 resize handler，防止重复创建导致内存泄漏 */
-let tabObserver: MutationObserver | null = null;
-let resizeHandler: (() => void) | null = null;
+const HEADER_SELECTOR = `.${tabsName}-tabs-header`;
 
-function listenScroll() {
-  const parentElement = document.querySelector('.markdown') as HTMLElement | null;
-  if (!parentElement || parentElement.dataset.scrollListenInited) return;
-  parentElement.dataset.scrollListenInited = 'true';
+/** 全局委托只注册一次 */
+let delegationInited = false;
 
-  parentElement?.addEventListener('wheel', (e: Event) => {
-    const wheelEvent = e as WheelEvent;
-    // 获取触发事件的子元素
-    const target = e.target as HTMLElement;
+/** 切换 tab：实时查询内容块（增量渲染增删 tab 后，缓存的 NodeList 索引会错位） */
+function activateTab(item: HTMLElement, header: HTMLElement, contents: Element) {
+  const items = header.querySelectorAll(`.${tabsName}-tab-button`);
+  const index = Array.from(items).indexOf(item);
 
-    // 检查目标元素是否是需要横向滚动的子元素
-    // 使用 .closest() 可以兼容事件冒泡到子元素内部的情况
-    const scrollableChild = target?.closest(`.${tabsName}-tabs-header`) as HTMLElement | null;
+  const panels = contents.querySelectorAll(`.${tabsName}-tab-content`);
+  items.forEach(i => i.classList.remove('active'));
+  panels.forEach(p => p.classList.remove('active'));
 
-    // 1. 如果没有找到目标子元素，或者没有垂直滚动量，直接放行
-    if (!scrollableChild || Math.abs(wheelEvent.deltaY) === 0) {
-      return;
-    }
+  item.classList.add('active');
+  if (panels[index]) {
+    panels[index].classList.add('active');
+  }
 
-    // 2. 关键修复：检查子元素是否真的可以横向滚动
-    // scrollWidth > clientWidth 表示内容溢出，存在横向滚动空间
-    const canScrollHorizontally = scrollableChild.scrollWidth > scrollableChild.clientWidth;
-
-    if (!canScrollHorizontally) {
-      // 如果无法横向滚动，则不阻止默认行为，让浏览器正常处理垂直滚动
-      return;
-    }
-
-    // 3. 只有当子元素确实可以横向滚动时，才阻止默认行为并执行横向滚动
-    e.preventDefault();
-    scrollableChild.scrollLeft += wheelEvent.deltaY;
-  }, { passive: false });
+  // 若所在 .markdown 容器已滚过该 tab 组，回滚到 tab 组顶部
+  const container = item.closest('.markdown');
+  const parent = item.offsetParent as HTMLElement | null;
+  if (container && parent && container.scrollTop > parent.offsetTop) {
+    container.scrollTo({ top: parent.offsetTop, behavior: 'smooth' });
+  }
 }
 
+/** tab 按钮点击（document 冒泡委托） */
+const handleClick = (e: Event) => {
+  const target = e.target as HTMLElement | null;
+  const item = target?.closest(`.${tabsName}-tab-button`) as HTMLElement | null;
+  if (!item) return;
+  const header = item.closest(HEADER_SELECTOR) as HTMLElement | null;
+  if (!header) return;
+  const wrapper = header.closest(`.${tabsName}-tabs-wrapper`);
+  const contents = wrapper?.querySelector(`.${tabsName}-tabs-container`);
+  if (!contents) return;
+  activateTab(item, header, contents);
+};
 
-function addMask() {
-  // 获取滚动容器
-  const parentElement = document.querySelector('.markdown');
+/** 纵向滚轮转横向滚动（document 捕获委托，仅处理可横向滚动的 tab header） */
+const handleWheel = (e: WheelEvent) => {
+  const header = (e.target as HTMLElement | null)?.closest(HEADER_SELECTOR) as HTMLElement | null;
+  if (!header || Math.abs(e.deltaY) === 0) return;
+  // 内容未溢出时放行，让浏览器正常处理垂直滚动
+  if (header.scrollWidth <= header.clientWidth) return;
+  e.preventDefault();
+  header.scrollLeft += e.deltaY;
+};
 
-  // 1. 封装一个处理单个滚动元素的函数
-  function initScrollMask(scrollEl: HTMLElement) {
-    // 防止重复初始化
-    if (scrollEl.dataset.maskInited) return;
-    scrollEl.parentElement!.dataset.maskInited = 'true';
+/**
+ * 为单个滚动 header 绑定渐隐蒙层。
+ * 修复：守卫位必须写在 scrollEl 自身（旧版写在 parentElement 导致守卫永不命中、
+ * 每次 renderTab 都重复叠加 scroll 监听器）。
+ */
+function initScrollMask(scrollEl: HTMLElement) {
+  if (scrollEl.dataset.maskInited) return;
+  scrollEl.dataset.maskInited = '1';
+  const host = scrollEl.parentElement;
+  if (!host) return;
 
-    const updateMaskState = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollEl;
+  const updateMaskState = () => {
+    const { scrollLeft, scrollWidth, clientWidth } = scrollEl;
+    const hasLeft = scrollLeft > 1;
+    const hasRight = scrollLeft + clientWidth < scrollWidth - 1;
 
-      const hasLeft = scrollLeft > 1;
-      const hasRight = scrollLeft + clientWidth < scrollWidth - 1;
+    host.classList.remove('has-left-mask', 'has-right-mask', 'has-both-masks');
 
-      // 清除所有状态类
-      scrollEl.parentElement!.classList.remove('has-left-mask', 'has-right-mask', 'has-both-masks');
+    if (hasLeft && hasRight) {
+      host.classList.add('has-both-masks');
+    } else if (hasLeft) {
+      host.classList.add('has-left-mask');
+    } else if (hasRight) {
+      host.classList.add('has-right-mask');
+    }
+  };
 
-      // 根据条件添加对应的状态类
-      if (hasLeft && hasRight) {
-        scrollEl.parentElement!.classList.add('has-both-masks');
-      } else if (hasLeft) {
-        scrollEl.parentElement!.classList.add('has-left-mask');
-      } else if (hasRight) {
-        scrollEl.parentElement!.classList.add('has-right-mask');
-      }
-    };
+  scrollEl.addEventListener('scroll', updateMaskState);
+  updateMaskState();
+}
 
-    // 绑定滚动事件
-    scrollEl.addEventListener('scroll', updateMaskState);
+/** 自愈式 observer：监听 body 新增节点，为动态插入的 tab header 补挂蒙层（已挂载的跳过） */
+let observerStarted = false;
 
-    // 初始执行一次
-    updateMaskState();
-  }
-
-  // 2. 初始化页面中已存在的滚动元素
-  document.querySelectorAll('.markdown-tabs-tabs-header').forEach(el => initScrollMask(el as HTMLElement));
-
-  // 3. 清理旧的 observer，防止重复创建
-  if (tabObserver) {
-    tabObserver.disconnect();
-    tabObserver = null;
-  }
-
-  // 4. 使用 MutationObserver 监听 DOM 变化
-  // 这样即使后续通过 JS 动态插入了新的 .scroll-content，也能自动绑定蒙层逻辑
-  tabObserver = new MutationObserver(mutations => {
+function ensureMaskObserver() {
+  if (observerStarted || typeof MutationObserver === 'undefined') return;
+  observerStarted = true;
+  const observer = new MutationObserver(mutations => {
     mutations.forEach(mutation => {
       mutation.addedNodes.forEach(node => {
-        if (node.nodeType !== 1) return; // 忽略文本节点
+        if (node.nodeType !== 1) return;
         const element = node as HTMLElement;
-
-        // 如果新增的节点本身就是 .markdown-tabs-tabs-header
-        if (element.classList.contains('markdown-tabs-tabs-header')) {
+        if (element.classList.contains(`${tabsName}-tabs-header`)) {
           initScrollMask(element);
         }
-        // 如果新增的节点内部包含了 .markdown-tabs-tabs-header
-        element.querySelectorAll('.markdown-tabs-tabs-header').forEach(el => initScrollMask(el as HTMLElement));
+        element.querySelectorAll(HEADER_SELECTOR).forEach(el => initScrollMask(el as HTMLElement));
       });
     });
   });
+  // observer 挂到 body 后不受任何 .markdown 容器重建影响，无需重复创建
+  observer.observe(document.body, { childList: true, subtree: true });
+}
 
-  if (parentElement) {
-    tabObserver.observe(parentElement, { childList: true, subtree: true });
-  }
+/** 窗口尺寸变化时重算所有 header 的蒙层状态（只注册一次） */
+let resizeBound = false;
 
-  // 5. 清理旧的 resize handler，防止重复绑定
-  if (resizeHandler) {
-    window.removeEventListener('resize', resizeHandler);
-  }
-
-  // 6. 窗口大小改变时，重新计算所有滚动元素的蒙层状态
-  resizeHandler = () => {
-    document.querySelectorAll('.markdown-tabs-tabs-header').forEach(el => {
+function ensureResizeHandler() {
+  if (resizeBound) return;
+  resizeBound = true;
+  window.addEventListener('resize', () => {
+    document.querySelectorAll<HTMLElement>(HEADER_SELECTOR).forEach(el => {
       el.dispatchEvent(new Event('scroll'));
     });
-  };
-  window.addEventListener('resize', resizeHandler);
+  });
 }
 
 function renderTab() {
-  // 获取页面上所有的 Tab 组容器
-  const wrappers = document.querySelectorAll(`.${tabsName}-tabs-wrapper`);
+  if (!delegationInited) {
+    delegationInited = true;
+    document.addEventListener('click', handleClick);
+    document.addEventListener('wheel', handleWheel, { passive: false, capture: true });
+  }
 
-  wrappers.forEach(wrapper => {
-    const header = wrapper.querySelector(`.${tabsName}-tabs-header`) as HTMLElement | null;
-    const contents = wrapper.querySelector(`.${tabsName}-tabs-container`);
+  // 已存在的 header 直接初始化（observer 只覆盖"之后新增"的节点）
+  document.querySelectorAll<HTMLElement>(HEADER_SELECTOR).forEach(el => initScrollMask(el));
 
-    if (!header || !contents) return;
-
-    // 防止重复绑定点击事件
-    if (header.dataset.clickInited) return;
-    header.dataset.clickInited = 'true';
-
-    const markdown = document.querySelector('.markdown')
-    // 将点击事件绑定在 header 上（事件委托）
-    header.addEventListener('click', (e) => {
-      // 1. 判断点击的是否为 Tab 按钮（防止点到 header 的其他空白区域）
-      const target = e.target as HTMLElement;
-      const item = target.closest(`.${tabsName}-tab-button`) as HTMLElement | null;
-      if (!item || !header.contains(item)) return;
-
-      // 2. 获取当前点击按钮的索引
-      const items = header.querySelectorAll(`.${tabsName}-tab-button`);
-      const index = Array.from(items).indexOf(item as HTMLElement);
-
-      // 3. 实时查询内容块（增量渲染增删 tab 后，闭包里缓存的 NodeList 索引会错位）
-      const panels = contents.querySelectorAll(`.${tabsName}-tab-content`);
-      // 移除该组内所有按钮和内容块的 active 类
-      items.forEach(i => i.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
-
-
-      item.classList.add('active');
-      if (panels[index]) {
-        panels[index].classList.add('active');
-      }
-      // 4. 激活当前点击的按钮和对应的内容块
-      const parent = item.offsetParent as HTMLElement | null;
-      if (parent && markdown?.scrollTop && parent.offsetTop && markdown?.scrollTop > parent.offsetTop) {
-        markdown?.scrollTo({
-          top: parent.offsetTop,
-          behavior: 'smooth'
-        })
-      }
-    });
-  });
-
-  listenScroll();
-  addMask();
+  ensureMaskObserver();
+  ensureResizeHandler();
 }
 
 export default renderTab;

@@ -39,6 +39,13 @@ html[data-theme="light"] {
   --remons-markdown-color-border-dark: #d0d7de;
   --remons-markdown-color-button-border: rgba(255, 255, 255, 0.8);
 
+  /* ── 组件表面 / 遮罩 ── */
+  /* 图表容器背景：浅色下透明（直接坐在页面背景上），深色下是一块实色 */
+  --remons-markdown-mermaid-surface: transparent;
+  /* tabs 头部横向溢出时左右两侧的渐隐遮罩色（必须是本主题的表面色，
+     写死白色在深色下会变成一层白纱） */
+  --remons-markdown-tabs-mask: rgba(255, 255, 255, 0.6);
+
   /* ── 字体 ── */
   --remons-markdown-font-family-base: Inter, Noto Sans SC, -apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif;
   --remons-markdown-font-family-editor: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
@@ -48,6 +55,8 @@ html[data-theme="light"] {
 
   /* ── 渐变背景 ── */
   --remons-markdown-bg-gradient: linear-gradient(137deg, rgb(229, 244, 255) 0%, rgb(239, 231, 255) 100%);
+  /* mermaid 全屏背景（浅色） */
+  --remons-markdown-mermaid-fullscreen-bg: linear-gradient(137deg, rgb(229, 244, 255) 0%, rgb(239, 231, 255) 100%);
 }
 
 /* ===== 深色主题 ===== */
@@ -86,12 +95,18 @@ html[data-theme="dark"] {
   --remons-markdown-color-border-dark: #3d4258;
   --remons-markdown-color-button-border: rgba(255, 255, 255, 0.1);
 
-  --remons-markdown-font-family-base: Inter, Noto Sans SC, -apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif,
-    "PingFang SC", "Microsoft YaHei", sans-serif;
+  --remons-markdown-mermaid-surface: #2e3350;
+  --remons-markdown-tabs-mask: rgba(46, 51, 80, 0.6);
+
+  /* 与浅色同序同项：上一版末尾多复制了「"PingFang SC", "Microsoft YaHei", sans-serif」，
+     导致 sans-serif 出现两次（无功能影响，但两边不一致会被误认为深色有专属字体） */
+  --remons-markdown-font-family-base: Inter, Noto Sans SC, -apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif;
   --remons-markdown-font-family-editor: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
 
   --remons-markdown-radius-base: 8px;
 
   /* ── 渐变背景 ── */
   --remons-markdown-bg-gradient: linear-gradient(137deg, rgb(229, 244, 255) 0%, rgb(239, 231, 255) 100%);
+  /* mermaid 全屏背景（深色）：深色下不能再沿用浅色渐变，否则全屏整片刺眼 */
+  --remons-markdown-mermaid-fullscreen-bg: linear-gradient(137deg, #1a1d2e 0%, #232840 100%);
 }

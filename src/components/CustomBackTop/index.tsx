@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import classNames from 'classnames/bind';
 import { UpOutlined } from '@ant-design/icons';
 import style from './index.module.less';
@@ -91,4 +91,5 @@ const CustomBackTop: React.FC<BackTopProps> = ({
   );
 };
 
-export default CustomBackTop;
+// memo：target 引用稳定时不随父级重渲染，同时避免 [target] effect 反复重建
+export default memo(CustomBackTop);

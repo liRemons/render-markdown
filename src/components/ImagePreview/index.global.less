@@ -1,0 +1,34 @@
+/**
+ * 图片预览（PhotoSwipe）外观覆盖
+ *
+ * PhotoSwipe 自带样式已随 `photoswipe/style.css` 打包进 dist/index.css，这里只改本库的默认观感：
+ * 官方默认遮罩是纯黑不透明（--pswp-bg: #000 + bgOpacity 1），盖在文档上像一整块黑板，
+ * 换成半透明 + 毛玻璃，并按主题各给一套，使用方可直接覆盖 --pswp-bg。
+ *
+ * 选择器用 `.pswp.md-image-preview`（后者由 mainClass 加在同一个根节点上）：
+ * 两个 class 的特异度高于 PhotoSwipe 的单个 `.pswp`，不依赖样式加载顺序。
+ */
+.pswp.md-image-preview {
+  --pswp-bg: rgba(18, 20, 30, 0.72);
+  /*
+   * 不要在这里改 --pswp-icon-color-secondary：它默认为中灰 #4f4f4f，
+   * 放大镜/关闭/箭头那些 SVG 的实心部分与文字投影用的就是它，
+   * 靠与白色描边（--pswp-icon-stroke-color）的反差拉开层次；
+   * 把它改成半透明白会让图标糊成一块实心，看不出放大还是缩小。
+   */
+}
+
+html[data-theme='dark'] .pswp.md-image-preview {
+  --pswp-bg: rgba(6, 8, 16, 0.78);
+}
+
+/* 半透明遮罩下把背后的正文虚化，避免文字轮廓透出干扰读图 */
+.pswp.md-image-preview .pswp__bg {
+  backdrop-filter: blur(6px) saturate(1.1);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+}
+
+/* 顶部工具条下方加一条很短的暗色渐变，避免「上一张/计数器」压在浅色图片上看不清 */
+.pswp.md-image-preview .pswp__top-bar {
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0));
+}
