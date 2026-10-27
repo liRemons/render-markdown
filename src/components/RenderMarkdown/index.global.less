@@ -141,9 +141,9 @@
   img {
     display: block;
     max-width: 100%;
-    max-height: 100px;
+    max-height: 200px;
     width: auto;
-    margin: 8px auto;
+    margin: 8px 0;
     border-radius: var(--remons-markdown-radius-base, 6px);
     object-fit: cover;
     object-position: top;
@@ -160,8 +160,14 @@
     border-radius: 6px;
     display: inline-block;
 
+    /**
+     * 表头底色走专属变量，不再复用 bg-card：浅色下 bg-card 是 transparent，
+     * 兜底值又和页面背景一个色，等于没有底色。
+     * 兜底（#f6f8fa / #2b3046）对应的是「只引了本 css、没引 variables.css」的使用方，
+     * 变量存在时以主题值为准，深浅色各一条，不会互相穿透。
+     */
     thead {
-      background-color: var(--remons-markdown-color-bg-card, #f6f8fa);
+      background-color: var(--remons-markdown-color-table-header, #f6f8fa);
       text-align: left;
       vertical-align: bottom;
     }
@@ -183,6 +189,20 @@
     td:last-child,
     th:last-child {
       border-right: 0;
+    }
+  }
+
+  /*
+   * 未挂 data-theme（使用方只引入样式、自己控色）时跟随系统深色：
+   * 此时 --remons-markdown-color-table-header 不存在，兜底 #f6f8fa 会是一片死白。
+   * 只处理「没有主题声明」这一种情况，显式 data-theme='light' 不能翻成深色。
+   * 特异度和上面 thead 一致（0-2-1），靠源码顺序覆盖。
+   */
+  @media (prefers-color-scheme: dark) {
+    &:not([data-theme]) {
+      table thead {
+        background-color: var(--remons-markdown-color-table-header, #2b3046);
+      }
     }
   }
 
@@ -227,7 +247,7 @@
 
   code {
     margin: 0 2px;
-    padding: 2px 7px;
+    padding: 2px 6px;
     background: #f9f2f4;
     color: #c7254df1;
     border-radius: 5px;
@@ -335,6 +355,28 @@
   .katex .katex-base {
     font-size: 14px;
     font-family: math;
+  }
+}
+
+/*
+ * 正文链接常驻下划线：原来靠浏览器 UA 默认样式，宿主自带 reset（把 a 的
+ * text-decoration 清掉）时就看不见，表现不稳定，这里显式声明。
+ * `.markdown` 套在 :where() 里，特异度只算一个 `a`（0,0,1），
+ * 因此 TOC 的 .tocItem .tocItemTitle .tocLink、标题的 .header-anchor，
+ * 以及使用方/插件里任何带 class 的 `text-decoration: none`（如 .link-preview-btn）
+ * 都能自然盖过本条，不必再追加 !important 或双 class 去追特异度。
+ */
+:where(.markdown) a {
+  text-decoration: underline;
+}
+
+/*
+ * 显式深色：与 variables.css 的 --remons-markdown-color-table-header 同值，
+ * 变量没被加载时也不会退化成浅色兜底。
+ */
+html[data-theme='dark'] .markdown {
+  table thead {
+    background-color: var(--remons-markdown-color-table-header, #2b3046);
   }
 }
 

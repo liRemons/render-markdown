@@ -42,6 +42,9 @@ html[data-theme="light"] {
   /* ── 组件表面 / 遮罩 ── */
   /* 图表容器背景：浅色下透明（直接坐在页面背景上），深色下是一块实色 */
   --remons-markdown-mermaid-surface: transparent;
+  /* 表格表头背景：必须是实色，不能复用 bg-card——浅色下 bg-card 是 transparent，
+     表头会和正文糊在一起（变量未加载时由 index.global.less 的兜底值接管） */
+  --remons-markdown-color-table-header: #eef1f4;
   /* tabs 头部横向溢出时左右两侧的渐隐遮罩色（必须是本主题的表面色，
      写死白色在深色下会变成一层白纱） */
   --remons-markdown-tabs-mask: rgba(255, 255, 255, 0.6);
@@ -96,6 +99,7 @@ html[data-theme="dark"] {
   --remons-markdown-color-button-border: rgba(255, 255, 255, 0.1);
 
   --remons-markdown-mermaid-surface: #2e3350;
+  --remons-markdown-color-table-header: #28304a;
   --remons-markdown-tabs-mask: rgba(46, 51, 80, 0.6);
 
   /* 与浅色同序同项：上一版末尾多复制了「"PingFang SC", "Microsoft YaHei", sans-serif」，

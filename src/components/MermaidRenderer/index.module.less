@@ -100,7 +100,9 @@
     position: relative;
     border: 1px solid var(--remons-markdown-color-border, #e4e4e4);
     box-sizing: border-box;
-    transition: max-height 0.3s ease-in-out, background-color 0.3s ease-in-out;
+    /* 折叠动画由 useMermaidControls 的 Web Animations API 补间 max-height 实现；
+       此处不再声明 transition: max-height（展开态是 none，本就不可插值，留着只会与动画争抢） */
+    transition: background-color 0.3s ease-in-out;
 
     &.mermaid-mini {
       max-height: 36px;
@@ -162,6 +164,7 @@
   .mermaid-title {
     position: absolute;
     line-height: 34px;
+    font-size: 14px;
     left: 6px;
     display: none;
     align-items: center;
@@ -207,7 +210,7 @@
   .mermaid-toolbar-loading {
     gap: 4px;
     z-index: 1;
-    right: 0;
+    right: 4px;
     position: absolute;
     top: 4px;
     display: inline-flex;
@@ -242,7 +245,12 @@
    */
   .mermaid-code-modal {
     .markdown {
-      padding: 14px 4px;
+      padding: 0 6px;
+      margin-bottom: 10px;
+
+      pre {
+        margin: 0;
+      }
     }
   }
 

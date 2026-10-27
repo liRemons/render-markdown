@@ -1,13 +1,12 @@
 .tocSidebar {
   position: absolute;
-  right: 24px;
+  right: 20px;
   top: 100px;
   width: 280px;
   max-height: calc(100vh - 120px);
   background: var(--remons-markdown-color-toc);
   /* 不需要 !important：本库内没有第二处 backdrop-filter 与它竞争 */
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border-radius: 8px;
   box-shadow: var(--remons-markdown-shadow-sm);
   z-index: 1000;
@@ -32,6 +31,7 @@
   .tocActions {
     display: flex;
     align-items: center;
+    gap: 6px;
 
     :global {
       .remons-markdown-circle {
@@ -179,7 +179,7 @@
 
 @media screen and (max-width: 500px) {
   .tocSidebar {
-    right: 24px;
+    right: 20px;
     top: 90px;
     width: 250px;
     max-height: calc(100vh - 100px);

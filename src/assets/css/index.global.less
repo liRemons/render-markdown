@@ -17,14 +17,11 @@
    不再在此用 !important 去盖组件里的 var（旧写法与 token 打优先级战争，深色覆盖也散落两处） */
 
 .remons-markdown-circle {
-  margin: 0 6px 0 0;
   padding: 0;
   width: 40px;
   height: 40px;
   border-radius: 100%;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  background-color: var(--remons-markdown-color-button);
+  background-color: var(--color-bg-white);
   box-shadow: var(--remons-markdown-shadow-sm);
   /* 上一版写的是 transition: shadow（shadow 不是 CSS 属性），hover/active 的阴影变更本没过渡 */
   transition: box-shadow 0.2s ease-in-out;
@@ -33,6 +30,7 @@
   justify-content: center;
   align-items: center;
   border: 1px solid var(--remons-markdown-color-button-border);
+  backdrop-filter: blur(10px);
 
   /*
    * 以下一律不带 !important：本库内的尺寸覆盖（图表工具栏 24px / TOC 22px）都是靠
@@ -47,10 +45,6 @@
   &:active {
     box-shadow: var(--remons-markdown-shadow-inset);
   }
-
-  &:last-child {
-    margin-right: 0;
-  }
 }
 
 @media screen and (max-width: 500px) {
@@ -61,10 +55,5 @@
     width: 30px;
     height: 30px;
     font-size: 12px;
-    margin-right: 4px;
-
-    &:last-child {
-      margin-right: 0;
-    }
   }
 }

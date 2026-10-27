@@ -123,11 +123,11 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   const {
     isFullscreen,
     isCollapsed,
-    setIsCollapsed,
+    toggleCollapseAnimated,
     showSource,
     setShowSource,
     isMinimize,
-    setIsMinimize,
+    toggleMinimizeAnimated,
     isPanzoomEnabled,
     setIsPanzoomEnabled,
     toggleFullscreen,
@@ -223,8 +223,8 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
             isPanzoomAvailable={isPanzoomAvailable}
             isPanzoomEnabled={isPanzoomEnabled}
             setIsPanzoomEnabled={setIsPanzoomEnabled}
-            setIsMinimize={setIsMinimize}
-            setIsCollapsed={setIsCollapsed}
+            setIsMinimize={toggleMinimizeAnimated}
+            setIsCollapsed={toggleCollapseAnimated}
             setShowSource={setShowSource}
             toggleFullscreen={() => {
               panzoomRef.current?.reset();

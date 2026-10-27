@@ -35,6 +35,55 @@ export default function useMermaidControls({
   useEffect(() => {
     isCollapsedRef.current = isCollapsed;
   }, [isCollapsed]);
+  const isMinimizeRef = useRef(isMinimize);
+  useEffect(() => {
+    isMinimizeRef.current = isMinimize;
+  }, [isMinimize]);
+
+  /**
+   * 折叠/最小化/展开三态的可见高度，需与 index.module.less 里
+   * `.mermaid-mini`(36px) 与 `.mermaid-collapsed`(200px) 的 max-height 对齐。
+   */
+  const MINI_HEIGHT = 36;
+  const COLLAPSED_HEIGHT = 200;
+
+  /**
+   * 用 Web Animations API 补间 wrapper 的 max-height。
+   * 不能靠 CSS `transition: max-height`：展开态 max-height 是 none（auto），
+   * none 不可插值，从 none 过渡到 200px 只会硬切。
+   * 这里用两个具体像素关键帧直接驱动 max-height：mermaid-collapsed/mini 的 class 由 React
+   * 同步落下会立即封顶，若补间 height 会被这个 max-height 夹住而看不到收缩；
+   * 而补间 max-height 本身与 class 同源（动画优先级高于普通声明，播完 fill:none 回落到
+   * class 的值且与末帧相等），因此无冲突、也不留内联残留。
+   */
+  const animateHeight = useCallback((nextCollapsed: boolean, nextMinimize: boolean) => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const from = el.getBoundingClientRect().height;
+    const to = nextMinimize ? MINI_HEIGHT : (nextCollapsed ? COLLAPSED_HEIGHT : el.scrollHeight);
+    if (Math.abs(from - to) < 1) return;
+    el.animate(
+      [{ maxHeight: `${from}px` }, { maxHeight: `${to}px` }],
+      { duration: 280, easing: 'ease-in-out' },
+    );
+  }, [wrapperRef]);
+
+  /** 供工具栏使用的折叠切换：先按下一态测高做动画，再落 state */
+  const toggleCollapseAnimated = useCallback((updater: boolean | ((prev: boolean) => boolean)) => {
+    const next = typeof updater === 'function' ? updater(isCollapsedRef.current) : updater;
+    if (next !== isCollapsedRef.current) {
+      animateHeight(next, isMinimizeRef.current);
+    }
+    setIsCollapsed(next);
+  }, [animateHeight]);
+
+  const toggleMinimizeAnimated = useCallback((updater: boolean | ((prev: boolean) => boolean)) => {
+    const next = typeof updater === 'function' ? updater(isMinimizeRef.current) : updater;
+    if (next !== isMinimizeRef.current) {
+      animateHeight(isCollapsedRef.current, next);
+    }
+    setIsMinimize(next);
+  }, [animateHeight]);
 
   // 打印模式下自动展开
   useEffect(() => {
@@ -98,6 +147,8 @@ export default function useMermaidControls({
     setIsFullscreen,
     isCollapsed,
     setIsCollapsed,
+    toggleCollapseAnimated,
+    toggleMinimizeAnimated,
     showSource,
     setShowSource,
     isMinimize,

@@ -187,18 +187,56 @@ const CODE_ICON_URL = 'https://remons.cn:3008/upload/md_assets/code_icon.png';
 const DEFAULT_TOOLBAR_DEBOUNCE = 100;
 
 
+/** 折叠态下 <pre> 的可见高度，与 index.global.less 里 `pre.code-collapsed` 的 max-height 对齐 */
+const CODE_COLLAPSED_HEIGHT = 32;
+
 /**
- * 代码折叠/展开切换组件
+ * 代码折叠/展开切换组件。
+ *
+ * 动画靠 Web Animations API 补间 `height`，而不是 CSS `transition: max-height`：
+ * 展开态是 `max-height: none`（auto），而 `none` 不可插值，transition 到 32px 只会硬切。
+ * 折叠动画期间延迟挂 `code-collapsed`（否则 max-height 立刻封顶、看不到收缩），
+ * 展开动画则先摘掉该 class 才能测到真实内容高度。
  */
 function CodeToggle({ preNode }: { preNode: HTMLElement }) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(() => preNode.classList.contains('code-collapsed'));
+  const animRef = useRef<Animation | null>(null);
+
+  // 卸载时若有在跑的动画，取消以免 then() 回调操作已卸载节点
+  useEffect(() => () => animRef.current?.cancel(), []);
+
   const handleClick = () => {
-    setIsCollapsed(!isCollapsed);
-    preNode.classList.toggle('code-collapsed', isCollapsed);
+    // 以 class 是否存在的“下一态”为准：当前折叠 -> 展开，当前展开 -> 折叠
+    const collapse = !preNode.classList.contains('code-collapsed');
+    const from = preNode.getBoundingClientRect().height;
+    // scrollHeight 始终返回未裁剪的内容高度（即便当前被 max-height 压着）
+    const to = collapse ? CODE_COLLAPSED_HEIGHT : preNode.scrollHeight;
+    animRef.current?.cancel();
+    if (to === from) {
+      preNode.classList.toggle('code-collapsed', collapse);
+      setIsCollapsed(collapse);
+      return;
+    }
+    if (!collapse) preNode.classList.remove('code-collapsed');
+    const anim = preNode.animate(
+      [{ height: `${from}px` }, { height: `${to}px` }],
+      { duration: 280, easing: 'ease-in-out' },
+    );
+    animRef.current = anim;
+    if (collapse) {
+      // 收缩结束后再封顶：与动画末帧同为 32px，无跳变
+      anim.finished.then(() => {
+        if (animRef.current !== anim) return;
+        preNode.classList.add('code-collapsed');
+        anim.cancel();
+      });
+    }
+    setIsCollapsed(collapse);
   };
+
   return (
     <span className="code-toggle" onClick={handleClick}>
-      {isCollapsed ? <CaretDownOutlined /> : <CaretRightOutlined />}
+      {isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
     </span>
   );
 }
