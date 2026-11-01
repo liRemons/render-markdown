@@ -164,3 +164,81 @@ html[data-theme='dark'] body {
   font-size: 13px;
   color: var(--remons-markdown-color-text-secondary);
 }
+
+/* ===== 第 10 节：增量渲染残留自检 ===== */
+
+.demo-steps {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--remons-markdown-color-bg-hover);
+  font-size: 13px;
+  line-height: 1.7;
+
+  code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: var(--remons-markdown-color-bg-card);
+    font-family: var(--remons-markdown-font-family-editor);
+    font-size: 12px;
+  }
+}
+
+.demo-editorArea {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--remons-markdown-color-border);
+  border-radius: 8px;
+  background: var(--remons-markdown-color-bg-card);
+  color: var(--remons-markdown-color-text-primary);
+  font-family: var(--remons-markdown-font-family-editor);
+  font-size: 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.demo-report {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--remons-markdown-color-border);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.demo-report--bad {
+  border-color: #e5484d;
+}
+
+.demo-reportOk {
+  color: var(--remons-markdown-color-text-secondary);
+}
+
+.demo-reportBad {
+  color: #e5484d;
+  font-weight: 600;
+}
+
+.demo-reportTime {
+  margin-left: auto;
+  color: var(--remons-markdown-color-text-secondary);
+}
+
+.demo-pane {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.demo-select {
+  padding: 4px 8px;
+  border: 1px solid var(--remons-markdown-color-border);
+  border-radius: 6px;
+  background: var(--remons-markdown-color-bg-card);
+  color: inherit;
+  font-size: 13px;
+}

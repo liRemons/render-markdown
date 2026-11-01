@@ -304,3 +304,123 @@ export const CIRCLED_MD = `## 0-50 序号逐行比对
 
 ${CIRCLED_LINES.join('\n')}
 `;
+
+/**
+ * 增量渲染残留自检用例（见 demo/App.tsx 第 10 节）
+ * 每个用例给 before / after 两份源码：一次 content 更新从 before 直接切到 after，
+ * 保证【恰好一次 morphdom patch】，不靠手速撞时序。
+ * 形状都刻意凑成「同一父级下 normalized class 完全相同的兄弟节点」：
+ * className 语义 key 会撞 key（morphdom 的 fromNodesLookup 每个 key 只存一个节点，
+ * 删除又按 key 回查），回查不到 key 的那个节点就永久留在 DOM。
+ * 注意：class 不同（①与⑩、NOTE与TIP、行内 katex 与块级 katex-display）就不撞 key，
+ * 也不会残留 —— 这是肉手测不出来的主要原因。
+ */
+export interface ResidueCase {
+  id: string;
+  title: string;
+  /** 撞 key 的节点，供自检表统计左右两栏数量 */
+  suspect: string;
+  steps: string;
+  /** 起点源码 */
+  before: string;
+  /** 注入后的源码（一般就是删掉一个同名兄弟节点） */
+  after: string;
+}
+
+const TABS_THREE = [
+  ':::markdown-tabs',
+  '',
+  '@tab:active 标签甲',
+  '',
+  '甲内容',
+  '',
+  '@tab 标签乙',
+  '',
+  '乙内容',
+  '',
+  '@tab 标签丙',
+  '',
+  '丙内容',
+  ':::',
+  '',
+].join('\n');
+
+const TABS_TWO = [
+  ':::markdown-tabs',
+  '',
+  '@tab:active 标签甲',
+  '',
+  '甲内容',
+  '',
+  '@tab 标签丙',
+  '',
+  '丙内容',
+  ':::',
+  '',
+].join('\n');
+
+export const RESIDUE_CASES: ResidueCase[] = [
+  {
+    id: 'num',
+    title: '序号 span（同段三个）',
+    suspect: '.mdNum / .mdNumWide / .mdNumCjk',
+    steps: '注入删除「② 第二条」。三个序号 class 都是 mdNum（一位数字），同父级同 key；期望右栏剩两个、左栏也剩两个。',
+    before: ['① 第一条序号文案', '② 第二条序号文案', '③ 第三条序号文案'].join(' '),
+    after: ['① 第一条序号文案', '③ 第三条序号文案'].join(' '),
+  },
+  {
+    id: 'katex',
+    title: '行内公式（同段两个 .katex）',
+    suspect: '.katex（含内部 katex-mathml / katex-html / base 同名嵌套）',
+    steps: '注入删掉第二个公式。两个行内公式在同一段落里是同名兄弟，公式内部还有一堆同名嵌套，会跨公式互摆。',
+    before: '公式一 $a+b=c$ 与公式二 $x-y=z$ 写在同一段里。',
+    after: '公式一 $a+b=c$ 写在同一段里。',
+  },
+  {
+    id: 'alert',
+    title: '两个同类 Alert 块',
+    suspect: 'div.markdown-alert.markdown-alert-note',
+    steps: '注入删掉第二个 NOTE（两个都是 note，class 完全一致；如果删的是 TIP 跟 NOTE 则不撞 key）。',
+    before: [
+      '> [!NOTE]',
+      '> 第一块：aaa',
+      '',
+      '> [!NOTE]',
+      '> 第二块：bbb',
+      '',
+      '尾部段落，保证删块时文档结构不变。',
+      '',
+    ].join('\n'),
+    after: [
+      '> [!NOTE]',
+      '> 第一块：aaa',
+      '',
+      '尾部段落，保证删块时文档结构不变。',
+      '',
+    ].join('\n'),
+  },
+  {
+    id: 'tabs',
+    title: 'Tabs（同 header 三个同名按钮）',
+    suspect: '.markdown-tabs-tab-button / .markdown-tabs-tab-content',
+    steps: '注入删掉中间那个 tab（active 不参与签名，所以三个按钮 normalized class 相同）。',
+    before: TABS_THREE,
+    after: TABS_TWO,
+  },
+  {
+    id: 'task',
+    title: '任务列表（两个同名 ul）',
+    suspect: 'ul.contains-task-list / li.task-list-item',
+    steps: '注入删掉第二个列表。两组 ul、四个 li 各自同名。',
+    before: ['- [ ] 甲一', '- [ ] 甲二', '', '- [ ] 乙一', '- [ ] 乙二', ''].join('\n'),
+    after: ['- [ ] 甲一', '- [ ] 甲二', ''].join('\n'),
+  },
+  {
+    id: 'blank',
+    title: '渲染空输出（空串早退）',
+    suspect: '整块内容',
+    steps: 'after 是一个空格：源码非空但渲染结果是空串。修复前增量链路在 if (!newHtml) return 处跳过本轮 patch，左栏会挂着整片旧内容；现在空输出会清空容器并回退到与右栏同一个 Empty 占位（两栏都是「暂无数据」）。',
+    before: ['这一段全部删光只留一个空格试试。', '', '第二段用于确认左右两栏一开始是一致的。'].join('\n'),
+    after: ' ',
+  },
+];

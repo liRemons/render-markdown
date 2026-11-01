@@ -8,6 +8,7 @@ import TocSidebar, { AnchorItem } from '../TocSidebar';
 import { copy } from 'methods-r';
 import classnames from 'classnames';
 import renderMarkdown, { MarkdownPlugin } from './utils/render-markdown';
+import { syncTabState } from './utils/render-markdown/render-tab';
 import { FENCE_OPEN_CLASS } from './utils/render-markdown/fence-state';
 import { initImageToolbars, cleanupImageToolbars } from '../ImagePreview';
 import {
@@ -183,6 +184,9 @@ const resolveProps = (props: Partial<RenderMarkdownProps>) => ({
 /** 代码块语言角标图标（远程资源） */
 const CODE_ICON_URL = 'https://remons.cn:3008/upload/md_assets/code_icon.png';
 
+/** 未指定语言（info 为空、无 language- class）时角标的兜底展示文案 */
+const DEFAULT_CODE_LANG_LABEL = 'text';
+
 /** content 变化后，工具栏/图片/mermaid 扫描的防抖延迟（ms）默认值 */
 const DEFAULT_TOOLBAR_DEBOUNCE = 100;
 
@@ -296,7 +300,7 @@ export interface RenderMarkdownProps {
    */
   chartConfig?: (text: string) => string;
   /**
-  * 代码块默认是否折叠
+  * 代码块默认是否折叠；对 mermaid 图表未指定时默认展开
   */
   defaultCollapsed?: boolean;
   /**
@@ -360,6 +364,8 @@ const getCodeLanguage = (code: HTMLElement): string =>
 
 /**
  * 初始化代码块工具栏（复制/语言角标/折叠）。
+ * 选取器用 `pre > code` 而非 `code[class*="language-"]`：
+ * 未指定语言的围栏/缩进代码块也生成头部栏，角标兜底显示 'text'。
  * @param scope - 查找作用域：传入当前实例容器，避免多实例互相初始化对方的代码块
  */
 const initCodeToolbars = (
@@ -367,9 +373,11 @@ const initCodeToolbars = (
   props: Pick<RenderMarkdownProps, 'enableMermaid' | 'isSlotMermaid' | 'showCollapseButton' | 'isShowCollapsed'>
 ) => {
   const { enableMermaid, showCollapseButton } = resolveProps(props);
-  scope.querySelectorAll('code[class*="language-"]').forEach((item) => {
+  scope.querySelectorAll('pre > code').forEach((item) => {
     const code = item as HTMLElement;
     const codeType = getCodeLanguage(code);
+    // 仅影响角标展示；身份 key / mermaid 判定仍按真实语言（空串）走，避免与 "```text" 显式声明混淆
+    const langLabel = codeType || DEFAULT_CODE_LANG_LABEL;
     // 围栏未闭合（流式输出中）时不隐藏源码：此时不挂图表，应当让用户看到逐步输入的 mermaid 源码
     const mermaidHideClassName = (enableMermaid && codeType === 'mermaid' && !code.classList.contains(FENCE_OPEN_CLASS)) ? 'mermaid-render-noCode' : ''
     const preNode = code.parentNode as HTMLElement | null;
@@ -389,8 +397,8 @@ const initCodeToolbars = (
         code.classList.remove('mermaid-render-noCode');
       }
       const langEl = existing.querySelector('[data-md-lang]');
-      if (langEl && langEl.textContent !== codeType) {
-        langEl.textContent = codeType;
+      if (langEl && langEl.textContent !== langLabel) {
+        langEl.textContent = langLabel;
       }
       // 折叠按钮配置未变化时保持复用；变化时重建该工具栏
       if (existing.getAttribute('data-md-show-collapsed') === String(showCollapseButton)) {
@@ -416,7 +424,7 @@ const initCodeToolbars = (
 
     const codeTypeDOM = <>
       <img src={CODE_ICON_URL} alt="" />
-      <span data-md-lang>{codeType}</span>
+      <span data-md-lang>{langLabel}</span>
     </>
 
     // 复制时在所属 <pre> 内查找 <code>：不依赖 document 全局查询，多实例下不会拷错
@@ -504,9 +512,20 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   // 增量 patch 完成后立即同步代码块工具栏：
   // morphdom 会用新 HTML 的 class 覆盖 <code>，导致 copy-id / mermaid 标记丢失
   const handlePatched = useCallback(() => {
-    if (containerRef.current) {
-      initCodeToolbars(containerRef.current, propsRef.current);
-    }
+    const container = containerRef.current;
+    if (!container) return;
+    initCodeToolbars(container, propsRef.current);
+    // tab 的激活态由用户点选写在 DOM 上，class 被新 HTML 覆写后需要还原回去
+    syncTabState(container);
+    // 补一次断开节点的回收：被删除子树里的 keyed 节点（工具栏带 data-md-persist）
+    // 会被 walkDiscardedChildNodes 跳过、也不会走到 onNodeDiscarded，
+    // 只能按 isConnected 回收，否则随代码块一起消失的 Root 永远泄漏在内存里
+    codeRootMap.forEach((root, handle) => {
+      if (!handle.isConnected) {
+        root.unmount();
+        codeRootMap.delete(handle);
+      }
+    });
   }, []);
 
   // 增量渲染：使用 morphdom 进行 DOM 差异化更新
@@ -545,14 +564,22 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
           text = '```' + codeType + '\n' + content + '\n```';
         }
 
-        const markdownInfo = await renderMarkdown(
-          text,
-          propsRef.current.customRenderers,
-          {
-            html: resolveProps(propsRef.current).html,
-            validateLink: propsRef.current.validateLink,
-          }
-        );
+        // 渲染抛错（自定义插件报错、KaTeX CDN 抖动、后台标签页网络被挂起等）不能只留一条
+        // unhandled rejection：状态会停在上一版 html，表现同样是「源码已改、渲染还在」
+        let markdownInfo: Awaited<ReturnType<typeof renderMarkdown>> | undefined;
+        try {
+          markdownInfo = await renderMarkdown(
+            text,
+            propsRef.current.customRenderers,
+            {
+              html: resolveProps(propsRef.current).html,
+              validateLink: propsRef.current.validateLink,
+            }
+          );
+        } catch (err) {
+          console.error('[RenderMarkdown] markdown 渲染失败，保留上一版内容:', err);
+          return;
+        }
         if (cancelled) return;
         setHtml(markdownInfo?.info);
         setAnchors(markdownInfo?.anchor || []);
@@ -567,6 +594,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
         const container = containerRef.current;
         if (!container) return;
         initCodeToolbars(container, propsRef.current);
+        syncTabState(container);
 
         const { isPrintPreview, excludedSelectors } = propsRef.current;
         initImageToolbars(container, { isPrintPreview, instanceSelectors: excludedSelectors });

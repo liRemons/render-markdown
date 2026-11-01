@@ -44,7 +44,7 @@ interface MermaidRendererProps {
    */
   showCollapse?: boolean;
   /**
-  * 默认折叠状态
+  * 默认折叠状态（默认 false，即默认展开）
   */
   defaultCollapsed?: boolean;
   /**
@@ -95,7 +95,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   showDownload = true,
   showSourceView = false,
   showCollapse = false,
-  defaultCollapsed = true,
+  defaultCollapsed = false,
   className = "",
   minHeight = 200,
   showDriverGuide,

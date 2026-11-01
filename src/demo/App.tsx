@@ -9,7 +9,7 @@ import RenderMarkdown, {
   type ThemeMode,
   type AnchorItem,
 } from '../index';
-import { SAMPLE_MD, STREAM_MD, UNSAFE_MD, VALIDATE_LINK_MD, CIRCLED_MD } from './content';
+import { SAMPLE_MD, STREAM_MD, UNSAFE_MD, VALIDATE_LINK_MD, CIRCLED_MD, RESIDUE_CASES } from './content';
 import python from 'highlight.js/lib/languages/python';
 import go from 'highlight.js/lib/languages/go';
 import './demo.less';
@@ -150,6 +150,241 @@ function MarkdownFormatDemo() {
           解析示例文档
         </button>
         {stat && <span className="demo-stat">{stat}</span>}
+      </div>
+    </section>
+  );
+}
+
+/*
+ * 增量渲染残留自检：左右两栏吃同一份可编辑源码
+ * 左栏 incremental（morphdom patch）、右栏全量重建，两者理论上必须完全一致，
+ * 左栏多出来的就是 patch 没删干净的残留（无需肉眼看效果，直接给判定）。
+ * 用例全部含「同一棵树里基础语义 key 重复」的节点：修复前 morphdom 的 fromNodesLookup
+ * 每个 key 只存一个节点、删除又按 key 回查，回查不到 key 的那个节点就永远留在 DOM；
+ * 现在重名 key 会加 [n] 后缀消歧（见 useIncrementalRender.buildKeyIndex），
+ * 这一节留作回归用例：任何一个判定成「不一致」都是 patch 又漏删了。
+ */
+const RESIDUE_CHECK_SELECTORS: { label: string; selector: string }[] = [
+  { label: '序号 span', selector: '.mdNum, .mdNumWide, .mdNumCjk' },
+  { label: '公式 .katex', selector: '.katex' },
+  { label: 'Alert 块', selector: '.markdown-alert' },
+  { label: 'Tab 按钮', selector: '.markdown-tabs-tab-button' },
+  { label: '列表项 li', selector: 'li' },
+  { label: '代码块 pre', selector: 'pre' },
+];
+
+/** 取渲染结果可见文本：压平空白差异，只比字符本身 */
+const readPaneText = (el: HTMLElement | null): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+interface ResidueReport {
+  textEqual: boolean;
+  incLen: number;
+  fullLen: number;
+  rows: { label: string; inc: number; full: number }[];
+  at: number;
+}
+
+function ResidueDemo() {
+  const [caseId, setCaseId] = useState(RESIDUE_CASES[0].id);
+  const [src, setSrc] = useState(RESIDUE_CASES[0].before);
+  /** 左栏 remount 计数：重建后残留应消失，用于区分「DOM 残留」与「数据本身就多」 */
+  const [remountKey, setRemountKey] = useState(0);
+  /** 节流窗口：初始化语义，变更靠 key 重挂；调大只会合并更多改动，不影响单步注入的判定 */
+  const [throttleMs, setThrottleMs] = useState(16);
+  const [stressRunning, setStressRunning] = useState(false);
+  const [report, setReport] = useState<ResidueReport | null>(null);
+  const incPaneRef = useRef<HTMLDivElement | null>(null);
+  const fullPaneRef = useRef<HTMLDivElement | null>(null);
+
+  const check = useCallback(() => {
+    const inc = incPaneRef.current;
+    const full = fullPaneRef.current;
+    if (!inc || !full) return;
+    const incText = readPaneText(inc);
+    const fullText = readPaneText(full);
+    setReport({
+      textEqual: incText === fullText,
+      incLen: incText.length,
+      fullLen: fullText.length,
+      rows: RESIDUE_CHECK_SELECTORS.map(({ label, selector }) => ({
+        label,
+        inc: inc.querySelectorAll(selector).length,
+        full: full.querySelectorAll(selector).length,
+      })),
+      at: Date.now(),
+    });
+  }, []);
+
+  // 停手 700ms 后再判定：等节流 patch、工具栏/插件扫描都收尾，避免把「还在更新中」误报成残留
+  useEffect(() => {
+    const timer = setTimeout(check, 700);
+    return () => clearTimeout(timer);
+  }, [src, remountKey, throttleMs, check]);
+
+  const currentCase = RESIDUE_CASES.find((c) => c.id === caseId) ?? RESIDUE_CASES[0];
+
+  const applyCase = (id: string) => {
+    const next = RESIDUE_CASES.find((c) => c.id === id);
+    if (!next) return;
+    setCaseId(id);
+    setSrc(next.before);
+    setReport(null);
+    // 左右两栏都重建一次，确保起点一致（否则用例间切换会把上一例的残留带过来）
+    setRemountKey((k) => k + 1);
+  };
+
+  const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  /*
+   * 压力注入：before ↔ after 来回切 6 次，每次都是一次完整 patch。
+   * 单次删除如果只多留一个同名节点，肉眼不好判；多轮累加后左栏计数会明显高于右栏
+   * （每轮多一个），把“非必现”的 bug 放大成可读数。
+   */
+  const runStress = async () => {
+    setStressRunning(true);
+    for (let i = 0; i < 6; i++) {
+      setSrc(i % 2 === 0 ? currentCase.after : currentCase.before);
+      await wait(260);
+    }
+    setSrc(currentCase.after);
+    await wait(260);
+    setStressRunning(false);
+    check();
+  };
+
+  const inconsistent = !!report && (!report.textEqual || report.rows.some((r) => r.inc !== r.full));
+  const atBefore = src === currentCase.before;
+  const atAfter = src === currentCase.after;
+
+  return (
+    <section className="demo-section">
+      <h2 className="demo-sectionTitle">10. 增量渲染残留自检（源码可编辑）</h2>
+      <p className="demo-desc">
+        左栏 <code>incremental</code>（morphdom 差异化 patch）、右栏全量重建，两栏共用下面这个文本框。
+        按用例行说明<strong>只做删除</strong>，然后看判定条：右栏永远是正确基线，
+        <strong>左栏多出来的字符/节点就是残留</strong>；点「重建左栏」后残留应当消失。
+      </p>
+      <p className="demo-desc">
+        判定口径：文本长度取两栏 <code>textContent</code>（压平空白后比对），再按节点类型给出左右计数。
+        序号、公式、Alert、Tab、任务列表这几个用例都含「重名语义 key 的节点」，
+        与序号插件本身无关——关掉 <code>circledNumbers</code> 也一样会在其它用例上命中。
+      </p>
+      <p className="demo-desc">
+        <strong>为什么之前不是必现</strong>：残留需要同时满足三个条件 —— ① 同一棵树里有两个
+        基础 key 完全相同的节点（<code>active</code> / <code>copy-*</code> / <code>code-collapsed</code> 会被剔掉再比，
+        所以 ①与⑩、NOTE与TIP 不撞 key）；② 这一帧真的跑了 patch
+        （首帧、清空分支、空输出早退都不算）；③ 父节点存活、只有同名节点数量减少。
+        手改文本框很容易落在条件外，所以下面用<strong>单步注入 / 压力注入</strong>做二值判定；
+        修复后这些用例应全部回到「一致」，它们现在作为回归用例保留。
+      </p>
+      <div className="demo-controls">
+        {RESIDUE_CASES.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            className={c.id === caseId ? 'demo-chip demo-chip-active' : 'demo-chip'}
+            onClick={() => applyCase(c.id)}
+          >
+            {c.title}
+          </button>
+        ))}
+        <button type="button" className="demo-btn" onClick={check}>
+          立即自检
+        </button>
+        <button type="button" className="demo-btn" onClick={() => setRemountKey((k) => k + 1)}>
+          重建左栏
+        </button>
+      </div>
+      <div className="demo-controls">
+        <button
+          type="button"
+          className="demo-btn"
+          disabled={!atBefore || stressRunning}
+          onClick={() => setSrc(currentCase.after)}
+        >
+          单步注入：before → after（恰好一次 patch）
+        </button>
+        <button
+          type="button"
+          className="demo-btn"
+          disabled={!atAfter || stressRunning}
+          onClick={() => setSrc(currentCase.before)}
+        >
+          还原 before
+        </button>
+        <button
+          type="button"
+          className="demo-btn"
+          disabled={stressRunning}
+          onClick={runStress}
+        >
+          {stressRunning ? '压力注入中…' : '压力注入 ×6（累加残留，最易观察）'}
+        </button>
+        <label className="demo-switch">
+          节流窗口
+          <select
+            className="demo-select"
+            value={throttleMs}
+            onChange={(e) => {
+              setThrottleMs(Number(e.target.value));
+              setRemountKey((k) => k + 1);
+            }}
+          >
+            <option value={16}>16ms</option>
+            <option value={120}>120ms</option>
+            <option value={400}>400ms</option>
+          </select>
+        </label>
+        <span className="demo-stat">
+          {atBefore ? '当前：before（起点）' : atAfter ? '当前：after（已删除一个同名节点）' : '当前：手动编辑内容'}
+        </span>
+      </div>
+      <p className="demo-steps">
+        <strong>{currentCase.title}</strong>（可疑节点：<code>{currentCase.suspect}</code>）—— {currentCase.steps}
+      </p>
+      <textarea
+        className="demo-editorArea"
+        value={src}
+        rows={9}
+        spellCheck={false}
+        onChange={(e) => setSrc(e.target.value)}
+      />
+      {report && (
+        <div className={inconsistent ? 'demo-report demo-report--bad' : 'demo-report'}>
+          <span className={inconsistent ? 'demo-reportBad' : 'demo-reportOk'}>
+            {report.textEqual
+              ? '文本一致：无残留'
+              : `文本不一致：左 ${report.incLen} 字 / 右 ${report.fullLen} 字`}
+          </span>
+          {report.rows
+            .filter((r) => r.inc !== 0 || r.full !== 0)
+            .map((r) => (
+              <span key={r.label} className={r.inc === r.full ? 'demo-reportOk' : 'demo-reportBad'}>
+                {r.label} 左 {r.inc} / 右 {r.full}
+              </span>
+            ))}
+          <span className="demo-reportTime">{new Date(report.at).toLocaleTimeString()}</span>
+        </div>
+      )}
+      <div className="demo-grid demo-grid--2">
+        <div className="demo-card">
+          <h3 className="demo-cardTitle">左：增量渲染（morphdom）</h3>
+          <div className="demo-pane" ref={incPaneRef}>
+            <RenderMarkdown
+              key={`inc-${remountKey}-${throttleMs}`}
+              content={src}
+              incremental
+              incrementalThrottleMs={throttleMs}
+              enableMermaid={false}
+            />
+          </div>
+        </div>
+        <div className="demo-card">
+          <h3 className="demo-cardTitle">右：全量重建（对照基线）</h3>
+          <div className="demo-pane" ref={fullPaneRef}>
+            <RenderMarkdown key={`full-${remountKey}`} content={src} enableMermaid={false} />
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -307,6 +542,8 @@ graph LR
           <RenderMarkdown content={CIRCLED_MD} enableMermaid={false} />
         </div>
       </section>
+
+      <ResidueDemo />
     </div>
   );
 }

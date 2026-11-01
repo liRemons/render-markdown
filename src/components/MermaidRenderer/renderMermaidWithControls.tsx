@@ -51,7 +51,7 @@ function ChartTree({ source, options }: { source: string; options: ScanProps }) 
           showSourceView
           showCollapse
           transformSource={options.transformSource ?? options.chartConfig}
-          defaultCollapsed={options.defaultCollapsed ?? true}
+          defaultCollapsed={options.defaultCollapsed ?? false}
           isPrintPreview={options.isPrintPreview ?? false}
           minHeight={200}
           showDriverGuide={options.showDriverGuide}
