@@ -9,7 +9,7 @@ import RenderMarkdown, {
   type ThemeMode,
   type AnchorItem,
 } from '../index';
-import { SAMPLE_MD, STREAM_MD, UNSAFE_MD, VALIDATE_LINK_MD } from './content';
+import { SAMPLE_MD, STREAM_MD, UNSAFE_MD, VALIDATE_LINK_MD, CIRCLED_MD } from './content';
 import python from 'highlight.js/lib/languages/python';
 import go from 'highlight.js/lib/languages/go';
 import './demo.less';
@@ -293,6 +293,18 @@ graph LR
             validateLink={allowSvgLink ? undefined : validateLinkNoSvg}
             enableMermaid={false}
           />
+        </div>
+      </section>
+
+      <section className="demo-section">
+        <h2 className="demo-sectionTitle">9. 带圈序号钉字体（①⑩㉑ ❶⓿ / emoji keycap）</h2>
+        <p className="demo-desc">
+          同一个视觉序号可能来自多套码位，正文字体栈打头的 Inter 不含这些字形，浏览器会逐字符回退，
+          表现就是「相邻两个圈一大一小」。库内默认用 <code>circledNumbers</code> 插件把序号包成
+          span，由 <code>.mdNum</code>/<code>.mdNumWide</code>/<code>.mdNumCjk</code> 三档钉住字体与字号（下面 0-50 逐行）。
+        </p>
+        <div className="demo-card demo-card--tall">
+          <RenderMarkdown content={CIRCLED_MD} enableMermaid={false} />
         </div>
       </section>
     </div>

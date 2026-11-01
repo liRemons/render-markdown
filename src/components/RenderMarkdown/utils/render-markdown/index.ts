@@ -7,6 +7,7 @@ import { tab } from "@mdit/plugin-tab";
 import MarkdownItGitHubAlerts from 'markdown-it-github-alerts';
 import taskList from 'markdown-it-task-lists';
 import { emptyTaskLists } from './empty-task-lists';
+import { circledNumbers } from './circled-numbers';
 import { markUnclosedFence } from './fence-state';
 import { defaultValidateLink } from './validate-link';
 import { alertTitles, alertIcons, postProcessAlerts } from './render-alert';
@@ -185,6 +186,9 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[],
     })
     .use(taskList)
     .use(emptyTaskLists)
+    // 带圈序号钉字体（样式见 index.global.less 的 .mdNum/.mdNumWide/.mdNumCjk）。
+    // 不受 html 开关影响：产出是库自己生成的 html_inline，非用户源码里的 HTML
+    .use(circledNumbers)
 
   if (katexAvailable) {
     md.use(katexPlugin, {

@@ -26,6 +26,18 @@ import { initHighlighter } from './components/RenderMarkdown/utils/render-markdo
 import { defaultValidateLink } from './components/RenderMarkdown/utils/render-markdown/validate-link';
 
 /**
+ * circledNumbers
+ * 带圈序号（①⑩㉑ ❶⓿、emoji keycap）钉字体插件：把序号包成 span，由样式统一字体与字号。
+ * 库内已默认启用；这里导出供使用方在自己的插件链里复用/排布顺序，
+ * ICircledClass / DEFAULT_CIRCLED_CLASS 供通过 .use(circledNumbers, cls) 覆盖三档类名
+ */
+import {
+  circledNumbers,
+  DEFAULT_CIRCLED_CLASS,
+  type ICircledClass,
+} from './components/RenderMarkdown/utils/render-markdown/circled-numbers';
+
+/**
 * Mermaid 渲染
 * - MermaidChart：推荐的组件用法（元素类型稳定，重渲染不丢状态）
 * - renderMermaid：旧函数用法，已标废
@@ -52,12 +64,14 @@ import { registerCdn } from './utils/cdn'
 
 export default RenderMarkdown;
 
-export type { RenderMarkdownProps, MarkdownPlugin, AnchorItem, ThemeMode };
+export type { RenderMarkdownProps, MarkdownPlugin, AnchorItem, ThemeMode, ICircledClass };
 export {
   markdownFormat,
   languagesCommon,
   initHighlighter,
   defaultValidateLink,
+  circledNumbers,
+  DEFAULT_CIRCLED_CLASS,
   MermaidChart,
   renderMermaid,
   useIncrementalRender,

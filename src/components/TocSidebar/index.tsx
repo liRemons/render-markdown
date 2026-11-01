@@ -139,12 +139,52 @@ interface TocSidebarProps {
   onClose: () => void;
 }
 
+/** 与 less 里 .tocSidebar 的 transition 时长保持一致（取略大值，确保动画跑完再卸载） */
+const TOC_ANIM_MS = 220;
+
 function TocSidebar({ anchors, activeId, visible, onClose }: TocSidebarProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const [searchText, setSearchText] = useState('');
   const [searching, setSearching] = useState(false);
+
+  /*
+   * 展开/收起动画：面板不能在 !visible 时直接卸载，否则没有 DOM 可播过渡。
+   * 用 mounted 控制是否留在 DOM、active 控制 open 类：
+   * - 打开：先挂载（open 未加，处于起始隐藏态）→ 下一帧加 open，触发进场过渡；
+   * - 关闭：先去掉 open 走离场过渡 → 动画时长后再卸载。
+   */
+  const [mounted, setMounted] = useState(visible);
+  const [active, setActive] = useState(visible);
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      const raf = requestAnimationFrame(() => setActive(true));
+      return () => cancelAnimationFrame(raf);
+    }
+    setActive(false);
+    const timer = setTimeout(() => setMounted(false), TOC_ANIM_MS);
+    return () => clearTimeout(timer);
+  }, [visible]);
+
+  /*
+   * 点击“目录面板 + 目录按钮”以外的位置收起目录。
+   * 目录按钮（.md-toc-toggle）在面板外、但它是开合开关，这里排除掉，否则一次点击会
+   * 先被本逻辑 close、又被按钮 onClick 翻转，表现为“点了没反应/关了又开”。
+   */
+  useEffect(() => {
+    if (!visible) return;
+    const handleOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (sidebarRef.current && sidebarRef.current.contains(target)) return;
+      if (target.closest('.md-toc-toggle')) return;
+      onClose();
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [visible, onClose]);
 
   useEffect(() => {
     if (!activeId || !bodyRef.current || !visible) return;
@@ -183,12 +223,15 @@ function TocSidebar({ anchors, activeId, visible, onClose }: TocSidebarProps) {
 
   const filteredAnchors = filterAnchors(anchors, searchText);
 
-  if (!anchors || anchors.length === 0 || !visible) {
+  if (!anchors || anchors.length === 0 || !mounted) {
     return null;
   }
 
   return (
-    <div className={classnames(styles.tocSidebar, 'md-toc-sidebar')}>
+    <div
+      ref={sidebarRef}
+      className={classnames(styles.tocSidebar, 'md-toc-sidebar', { [styles.open]: active })}
+    >
       <div className={styles.tocHeader}>
         <span className={styles.tocTitle}>目录</span>
         <div className={styles.tocActions}>

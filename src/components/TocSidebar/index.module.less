@@ -1,6 +1,6 @@
 .tocSidebar {
   position: absolute;
-  right: 20px;
+  right: 32px;
   top: 100px;
   width: 280px;
   max-height: calc(100vh - 120px);
@@ -13,6 +13,21 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--remons-markdown-color-button-border);
+  /* 收起态（默认）：透明 + 轻微上移缩小，靠 .open 切到可见态播进场/离场过渡。
+     transform-origin 定右上角，视觉上从右上角的目录按钮处“长出来”；
+     收起时 pointer-events:none，避免隐形面板拦截“点击外部收起”的事件 */
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  transform-origin: top right;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+/* 展开态：组件挂载后下一帧由 .open 触发过渡（与 TOC_ANIM_MS 时长对应） */
+.tocSidebar.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .tocHeader {
@@ -179,7 +194,7 @@
 
 @media screen and (max-width: 500px) {
   .tocSidebar {
-    right: 20px;
+    right: 32px;
     top: 90px;
     width: 250px;
     max-height: calc(100vh - 100px);

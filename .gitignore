@@ -27,3 +27,6 @@ npm-debug.log*
 
 .npmrc
 .lock
+
+# Local commit message drafts
+COMMIT_MSG.txt

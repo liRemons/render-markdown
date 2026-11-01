@@ -85,8 +85,24 @@ html[data-theme='dark'] body {
 }
 
 .demo-card--tall {
-  max-height: 720px;
-  overflow-y: auto;
+  /* 高度定死、卡片本身不滚动：把滚动下推到正文 .markdown-html，
+     这样 TOC（绝对定位于不滞动的 .markdown）不会跟着内容一起滚走 */
+  height: 720px;
+  display: flex;
+  flex-direction: column;
+
+  .markdown {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .markdown-html {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
 }
 
 .demo-cardTitle {

@@ -1,6 +1,9 @@
 ﻿.markdown {
   cursor: initial;
   box-sizing: border-box;
+  /* 目录按钮 .tocToggle 与面板 .tocSidebar 都是 position:absolute，需要一个定位父级把它们
+     收在本组件范围内；不设的话会向上逃逸到宿主任意一个 relative 容器，TOC 贴到内容外。 */
+  position: relative;
   /* 旧写法是 `padding: 10px 8px 18px` 紧跟一句 `padding-bottom: 0`：18px 从不生效，归成一条 */
   padding: 10px 8px 0;
   color: var(--remons-markdown-color-text-primary);
@@ -355,6 +358,43 @@
   .katex .katex-base {
     font-size: 14px;
     font-family: math;
+  }
+
+  /**
+   * 带圈序号（①⑩㉑ ❶⓿ 以及 emoji keycap）由 circledNumbers 插件逐个包成 span。
+   * 本栈打头的 Inter 不含这些字形，浏览器会逐字符回退 —— 相邻两个圈落在不同字体上，
+   * 表现就是「同一个视觉序号一大一小」；keycap 还会按 emoji 渲染再大一档。
+   * 这里给一份能覆盖这批码位的字体栈并分三档钉字号，让序号不再随上游码位漂。
+   * mixin 定义时带括号，Less 不会把它输出成选择器，因此不会多出一个类名。
+   */
+  .circledNum() {
+    /* 钉下来的字体（Segoe UI Symbol 等）圈径本身就比同排正文小一号，得抬一档才齐平 */
+    font-size: 1.2em;
+    /* 行高不能跟着字号走：父级给的是无单位数值（按各自字号算），字号一放大就会撑高行盒、
+       整段行位置抖动；锁成 1 后行盒高度只由容器自己定 */
+    line-height: 1;
+    font-family: 'Segoe UI Symbol', 'Noto Sans Symbols2', 'Apple Symbols', 'PingFang SC',
+      'Microsoft YaHei', sans-serif;
+  }
+
+  /* 圈内一位数字（①-⑨、⓪、❶-❾ 等）：只钉字体与统一字号 */
+  .mdNum {
+    .circledNum();
+  }
+
+  /* 圈内两位数字（⑩-⑳ 等）：字形为装下两位数字把圈画得比单数字大，同段并排仍然突出，
+     相对上一档压回一点（1.14/1.2 ≈ 0.95，圈径与 ①-⑨ 对齐）；用 em 不用定值，正文改字号会跟着走 */
+  .mdNumWide {
+    .circledNum();
+    font-size: 1.14em;
+  }
+
+  /* ㉑-㊿（CJK 符号块）：上面的西文符号栈盖不住这批码位，实际落到中文字体上、圈按全角字身画，
+     与 ①-⑳ 同字号会明显探出一号，故再压一档（1em 相对 1.2em 约降 17%）。
+     按「码位所属字体族」分档，而不是只按圈内位数分档 —— 只分两档时 20 以里正常、从 21 又变大 */
+  .mdNumCjk {
+    .circledNum();
+    font-size: 1em;
   }
 }
 

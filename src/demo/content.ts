@@ -284,3 +284,23 @@ export const VALIDATE_LINK_MD = `## 两种内联 data URI 图片
 
 ![PNG 内联图](${makeSampleImage('PNG data URI：默认即渲染', '#0ea5e9', '#22c55e')})
 `;
+
+/**
+ * 带圈序号 mock：0-50 每行一个序号 + 文案，序号独占一行（只用来目测大小是否被钉齐）
+ * 只按码位取 ①② 这类带圈序号：0 → ⓪、1-20 → U+2460-2473、21-50 → CJK 块 ㉑-㊿
+ * （32-35 Unicode 本身未收录圈号，退回普通数字）。行尾不带空格：正文 <p> 是 pre-line，换行即断行。
+ */
+const circledChar = (n: number): string => {
+  if (n === 0) return String.fromCodePoint(0x24ea); // ⓪
+  if (n <= 20) return String.fromCodePoint(0x2460 + (n - 1)); // ①-⑳
+  if (n <= 31) return String.fromCodePoint(0x3251 + (n - 21)); // ㉑-㉟
+  if (n <= 35) return String(n); // 32-35 无圈号字形
+  return String.fromCodePoint(0x32b1 + (n - 36)); // ㊱-㊿ = 36-50
+};
+
+const CIRCLED_LINES: string[] = Array.from({ length: 51 }, (_, n) => `${circledChar(n)} 第 ${n} 条序号文案。`);
+
+export const CIRCLED_MD = `## 0-50 序号逐行比对
+
+${CIRCLED_LINES.join('\n')}
+`;
