@@ -77,7 +77,8 @@ export default function usePanzoom({ contentRef, wrapperRef, canUse, active, isF
       maxScale: 5,
       minScale: 0.1,
       startScale: 1,
-      contain: 'outside' as const,
+      // 不能用 contain: 'outside'：它会按容器/元素尺寸把 minScale 抬到 ≥ 1，
+      // 导致无法缩到比原图表更小；越界由工具栏「重置」（reset 会同时回中回 1x）兜底
       // 是否响应交互交由 active 决定，创建时先不抢事件
       noBind: true,
     });

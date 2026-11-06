@@ -239,8 +239,8 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
       {/* 错误提示 */}
       {error && <div className={style.errorTip}>⚠️ {error}</div>}
 
-      {/* 预览区域 */}
-      <div className={`${style.previewArea} ${!isPanzoomActive ? style.previewAreaDisabled : ''}`} style={{ minHeight: hasDiagram ? "auto" : minHeight }}>
+      {/* 预览区域：常驻挂 previewAreaMin 给小尺寸图表封顶最小高度，避免被浮层工具栏遮挡 */}
+      <div className={`${style.previewArea} ${style.previewAreaMin} ${!isPanzoomActive ? style.previewAreaDisabled : ''}`} style={{ minHeight: hasDiagram ? undefined : minHeight }}>
         <div
           ref={contentRef}
           className={style.previewContent}

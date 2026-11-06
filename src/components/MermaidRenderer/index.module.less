@@ -28,6 +28,12 @@
   }
 }
 
+/* 图表区最小高度：工具栏（top 4px + 24px 按钮）是浮在预览区上方的 absolute 层，
+   小尺寸图表若不封顶就会被按钮盖住；64px = 按钮行 28px + 下方至少 36px 可见区域 */
+.previewAreaMin {
+  min-height: 64px;
+}
+
 .previewAreaDisabled {
   /* 不用 !important：写成双 class 就比 .previewArea 与 .previewArea:active 都高 */
   &.previewArea {

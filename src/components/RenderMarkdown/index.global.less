@@ -317,11 +317,30 @@
         font-family: var(--remons-markdown-font-family-editor);
       }
 
-      img {
-        width: 36px;
-        height: 8px;
-        margin: 0;
+      /* 红绿灯角标：三个固定色圆点替代原远程 code_icon.png，尺寸与原 36×8 图标对齐 */
+      .traffic-lights {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
         margin-right: 6px;
+
+        .traffic-light {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        .traffic-light-red {
+          background: #ff5f56;
+        }
+
+        .traffic-light-yellow {
+          background: #ffbd2e;
+        }
+
+        .traffic-light-green {
+          background: #27c93f;
+        }
       }
 
       .code-toggle {

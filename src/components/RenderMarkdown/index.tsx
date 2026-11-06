@@ -181,12 +181,6 @@ const resolveProps = (props: Partial<RenderMarkdownProps>) => ({
   html: props.html ?? true,
 });
 
-/** 代码块语言角标图标（远程资源） */
-const CODE_ICON_URL = 'https://remons.cn:3008/upload/md_assets/code_icon.png';
-
-/** 未指定语言（info 为空、无 language- class）时角标的兜底展示文案 */
-const DEFAULT_CODE_LANG_LABEL = 'text';
-
 /** content 变化后，工具栏/图片/mermaid 扫描的防抖延迟（ms）默认值 */
 const DEFAULT_TOOLBAR_DEBOUNCE = 100;
 
@@ -365,7 +359,7 @@ const getCodeLanguage = (code: HTMLElement): string =>
 /**
  * 初始化代码块工具栏（复制/语言角标/折叠）。
  * 选取器用 `pre > code` 而非 `code[class*="language-"]`：
- * 未指定语言的围栏/缩进代码块也生成头部栏，角标兜底显示 'text'。
+ * 未指定语言的围栏/缩进代码块也生成头部栏，角标留空。
  * @param scope - 查找作用域：传入当前实例容器，避免多实例互相初始化对方的代码块
  */
 const initCodeToolbars = (
@@ -376,8 +370,8 @@ const initCodeToolbars = (
   scope.querySelectorAll('pre > code').forEach((item) => {
     const code = item as HTMLElement;
     const codeType = getCodeLanguage(code);
-    // 仅影响角标展示；身份 key / mermaid 判定仍按真实语言（空串）走，避免与 "```text" 显式声明混淆
-    const langLabel = codeType || DEFAULT_CODE_LANG_LABEL;
+    // 未指定语言时角标留空，不兜底展示文案
+    const langLabel = codeType;
     // 围栏未闭合（流式输出中）时不隐藏源码：此时不挂图表，应当让用户看到逐步输入的 mermaid 源码
     const mermaidHideClassName = (enableMermaid && codeType === 'mermaid' && !code.classList.contains(FENCE_OPEN_CLASS)) ? 'mermaid-render-noCode' : ''
     const preNode = code.parentNode as HTMLElement | null;
@@ -422,8 +416,13 @@ const initCodeToolbars = (
     handleDOM.setAttribute('data-md-show-collapsed', String(showCollapseButton));
     preNode.insertBefore(handleDOM, code);
 
+    // 红绿灯角标纯 CSS 绘制（三个固定色圆点），不再依赖远程图片
     const codeTypeDOM = <>
-      <img src={CODE_ICON_URL} alt="" />
+      <span className="traffic-lights">
+        <span className="traffic-light traffic-light-red" />
+        <span className="traffic-light traffic-light-yellow" />
+        <span className="traffic-light traffic-light-green" />
+      </span>
       <span data-md-lang>{langLabel}</span>
     </>
 
