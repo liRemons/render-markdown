@@ -1,14 +1,10 @@
 .tocSidebar {
   position: absolute;
-  right: 32px;
-  top: 100px;
+  right: 16px;
+  top: 70px;
   width: 280px;
-  /* 两道上限取小：100vh 保证不超出视口，100%（= 定位父级 .markdown 的高度）保证
-     宿主把 .markdown 收成一个定高可视区（滚动下放给 .markdown-html）时不溢出该区被裁；
-     宿主的 Header / 外边距无需宿主再覆写一次 */
   max-height: min(calc(100vh - 120px), calc(100% - 120px));
   background: var(--remons-markdown-color-toc);
-  /* 不需要 !important：本库内没有第二处 backdrop-filter 与它竞争 */
   backdrop-filter: blur(10px);
   border-radius: 8px;
   box-shadow: var(--remons-markdown-shadow-sm);
@@ -16,9 +12,6 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--remons-markdown-color-button-border);
-  /* 收起态（默认）：透明 + 轻微上移缩小，靠 .open 切到可见态播进场/离场过渡。
-     transform-origin 定右上角，视觉上从右上角的目录按钮处“长出来”；
-     收起时 pointer-events:none，避免隐形面板拦截“点击外部收起”的事件 */
   opacity: 0;
   transform: translateY(-8px) scale(0.98);
   transform-origin: top right;
@@ -197,8 +190,8 @@
 
 @media screen and (max-width: 500px) {
   .tocSidebar {
-    right: 32px;
-    top: 90px;
+    right: 16px;
+    top: 60px;
     width: 250px;
     max-height: min(calc(100vh - 100px), calc(100% - 110px));
     line-height: 18px;
