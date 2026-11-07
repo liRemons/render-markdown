@@ -9,18 +9,17 @@ const cx = classNames.bind(style);
  * BackTop 组件的属性接口
  */
 interface BackTopProps {
-  /** 滚动容器元素获取函数 */
-  target?: () => HTMLElement;
+  /**
+   * 滚动容器获取函数。返回 null 表示「此刻还没就绪」，组件会逐帧重试
+   * （上限 MAX_RESOLVE_FRAMES 帧）；用于滚动容器由本库渲染、宿主在 render 阶段取不到的场景。
+   */
+  target?: () => HTMLElement | Window | null;
   /** 显示阈值，滚动超过此值时显示按钮 */
   visibilityHeight?: number;
 }
 
-/**
- * 获取当前滚动容器
- */
-function getScrollContainer(containerRef: React.RefObject<HTMLElement | null>): HTMLElement | Window {
-  return containerRef.current || window;
-}
+/** 惰性解析的重试帧数上限（约 4s@60fps）：超限即放弃，按钮保持不显示 */
+const MAX_RESOLVE_FRAMES = 240;
 
 /**
  * 获取滚动容器的 scrollTop
@@ -40,43 +39,53 @@ const CustomBackTop: React.FC<BackTopProps> = ({
   visibilityHeight = 300,
 }) => {
   const [visible, setVisible] = useState(false);
-  const containerRef = useRef<HTMLElement | null>(null);
+  const containerRef = useRef<HTMLElement | Window | null>(null);
 
-  // 获取滚动容器
+  // 目标在 effect 阶段解析（DOM 已提交），而非 render 阶段：
+  // 宿主传 getter 时，库自己生成的滚动节点此刻才可能取得到
   useEffect(() => {
-    if (target) {
-      try {
-        containerRef.current = target();
-      } catch {
-        containerRef.current = null;
-      }
-    }
-  }, [target]);
+    let cancelled = false;
+    let rafId = 0;
+    let frames = 0;
 
-  // 监听滚动事件
-  useEffect(() => {
-    const container = getScrollContainer(containerRef);
-    
     const handleScroll = () => {
-      setVisible(getScrollTop(container) > visibilityHeight);
+      const el = containerRef.current;
+      if (el) setVisible(getScrollTop(el) > visibilityHeight);
     };
 
-    container.addEventListener('scroll', handleScroll, { passive: true });
+    const attach = (el: HTMLElement | Window) => {
+      containerRef.current = el;
+      el.addEventListener('scroll', handleScroll, { passive: true });
+      // 初始检查
+      handleScroll();
+    };
 
-    // 初始检查
-    handleScroll();
+    const resolve = () => {
+      if (cancelled) return;
+      // 未传 target 保持旧默认（跟随 window）；传了但返回 null 则重试
+      const el = target ? target() : (typeof window !== 'undefined' ? window : null);
+      if (el) {
+        attach(el);
+        return;
+      }
+      if (frames++ >= MAX_RESOLVE_FRAMES) return;
+      rafId = requestAnimationFrame(resolve);
+    };
+    resolve();
 
     return () => {
-      container.removeEventListener('scroll', handleScroll);
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      containerRef.current?.removeEventListener('scroll', handleScroll);
+      containerRef.current = null;
     };
-  }, [visibilityHeight]);
+  }, [target, visibilityHeight]);
 
   /**
    * 点击按钮滚动到顶部
    */
   const handleClick = () => {
-    const container = getScrollContainer(containerRef);
-    container.scrollTo({ top: 0, behavior: 'smooth' });
+    containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (!visible) return null;

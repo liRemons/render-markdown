@@ -274,9 +274,12 @@ export interface RenderMarkdownProps {
   */
   footer?: React.ReactNode;
   /**
-   * 返回顶部所依赖的容器，默认 document.body（仅在首次渲染时读取）
+   * 返回顶部监听的滚动容器，默认 document.body。
+   * - 传元素：初始化语义，仅首次渲染读取一次（与旧版一致）
+   * - 传 getter：由 BackTop 在自身挂载后（DOM 已提交）惰性调用，返回 null 时逐帧重试；
+   *   用于滚动容器是本组件内部生成的节点（如 `.markdown-html`）、宿主在 render 阶段取不到的场景
    */
-  backTopTarget?: HTMLElement | null;
+  backTopTarget?: HTMLElement | null | (() => HTMLElement | null);
   /**
   * 是否显示新手引导
   */
@@ -474,9 +477,11 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   const propsRef = useRef(props);
   propsRef.current = props;
 
-  // 返回顶部监听目标：首次渲染时固定（初始化语义），并避免在 render 阶段读 document
+  // 返回顶部监听目标：
+  // - 元素入参沿用旧语义，首次渲染定死，且不在 render 阶段读 document
+  // - getter 入参原样透传，由 CustomBackTop 在 effect 阶段调用（那时本组件 DOM 已提交）
   const backTopTargetRef = useRef<HTMLElement | null>(null);
-  if (backTopTargetRef.current === null) {
+  if (typeof props.backTopTarget !== 'function' && backTopTargetRef.current === null) {
     backTopTargetRef.current = props.backTopTarget ?? (typeof document !== 'undefined' ? document.body : null);
   }
 
@@ -484,7 +489,11 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   // 否则 content 变化时内联新函数会击穿 memo，导致整棵目录递归树每次按键重渲染
   const toggleToc = useCallback(() => setShowToc((v) => !v), []);
   const closeToc = useCallback(() => setShowToc(false), []);
-  const getBackTopTarget = useCallback(() => backTopTargetRef.current as HTMLElement, []);
+  const getBackTopTarget = useCallback(() => {
+    const target = propsRef.current.backTopTarget;
+    if (typeof target === 'function') return target();
+    return backTopTargetRef.current;
+  }, []);
 
   // 增量渲染：diff 移除节点时清理其中的代码工具栏 React Root，避免 Root 泄漏
   const handleNodeDiscarded = useCallback((el: HTMLElement) => {

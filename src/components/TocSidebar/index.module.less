@@ -3,7 +3,10 @@
   right: 32px;
   top: 100px;
   width: 280px;
-  max-height: calc(100vh - 120px);
+  /* 两道上限取小：100vh 保证不超出视口，100%（= 定位父级 .markdown 的高度）保证
+     宿主把 .markdown 收成一个定高可视区（滚动下放给 .markdown-html）时不溢出该区被裁；
+     宿主的 Header / 外边距无需宿主再覆写一次 */
+  max-height: min(calc(100vh - 120px), calc(100% - 120px));
   background: var(--remons-markdown-color-toc);
   /* 不需要 !important：本库内没有第二处 backdrop-filter 与它竞争 */
   backdrop-filter: blur(10px);
@@ -197,7 +200,7 @@
     right: 32px;
     top: 90px;
     width: 250px;
-    max-height: calc(100vh - 100px);
+    max-height: min(calc(100vh - 100px), calc(100% - 110px));
     line-height: 18px;
   }
 

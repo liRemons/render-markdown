@@ -102,7 +102,7 @@ import 'remons-render-markdown/style.css';
 
 ### RenderMarkdown 组件 Props
 
-> **初始化语义**：除 `content` 外的配置项仅在组件挂载时读取一次，渲染途中修改不会生效（需变更 `key` 重新挂载）。`backTopTarget` 同样只在首次渲染时读取。
+> **初始化语义**：除 `content` 外的配置项仅在组件挂载时读取一次，渲染途中修改不会生效（需变更 `key` 重新挂载）。`backTopTarget` 传元素时同样只在首次渲染读取，传 getter 时改为挂载后惰性解析（见下表）。
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
@@ -117,7 +117,7 @@ import 'remons-render-markdown/style.css';
 | toolbarDebounceMs | number | ❌ | `100` | content 变化后工具栏/图片/图表扫描的防抖延迟（ms） |
 | showToc | boolean | ❌ | `false` | 是否显示目录（TOC）按钮和侧边栏 |
 | showBackTop | boolean | ❌ | `false` | 是否显示返回顶部按钮 |
-| backTopTarget | HTMLElement \| null | ❌ | `document.body` | 返回顶部监听的滚动容器（仅首次渲染读取） |
+| backTopTarget | HTMLElement \| null \| (() => HTMLElement \| null) | ❌ | `document.body` | 返回顶部监听的滚动容器。传元素为初始化语义（仅首次渲染读取）；传 getter 则在 BackTop 挂载后（DOM 已提交）解析，返回 `null` 时逐帧重试（上限约 4s），用于滚动容器由本组件生成、宿主在 render 阶段取不到的场景（如 `.markdown-html`） |
 | footer | React.ReactNode | ❌ | - | 内容区下方的自定义底部 |
 | customRenderers | MarkdownPlugin[] | ❌ | - | 自定义 markdown-it 插件，在内置插件之后按序执行 |
 | transformSource | (text: string) => string | ❌ | - | 渲染前改写 mermaid 源码 |
