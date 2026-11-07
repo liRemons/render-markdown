@@ -156,6 +156,30 @@
     }
   }
 
+  /* CSS 降级全屏：宿主（VSCode 等 Electron webview、http 非安全上下文）不支持 Fullscreen API，
+     requestFullscreen 会被拒绝，useMermaidControls 检测到后改为让 wrapper 铺满 webview 视口，
+     视觉上等价于原生全屏（范围是编辑器标签页区域，盖不住侧栏/标题栏）。
+     选择器不要求基础 .mermaid-wrapper：该 class 仅在 showCollapse 时才加，降级按钮却在任何情况下
+     都存在，若写成双 class 会在 showCollapse=false 时整条规则不命中。position:fixed 由 index.tsx
+     内联设置（盖过基础内联 position:relative），但 fixed 不给 inset 不会自动铺满视口、
+     会停在静态位置并按 shrink-to-fit 收缩，所以这里必须补齐 inset:0 让它真正顶满四边 */
+  .mermaid-wrapper-fullscreen-fallback {
+    inset: 0;
+    z-index: 1000;
+    overflow: hidden;
+    background: var(--remons-markdown-mermaid-fullscreen-bg);
+
+    /* 防御：折叠态的 max-height: 200px 会压住铺满视口的高度 */
+    &.mermaid-collapsed {
+      max-height: none;
+    }
+
+    .mermaid-toolbar {
+      top: 4px;
+      right: 8px;
+    }
+  }
+
   .mermaid-loading {
     height: 200px;
     display: flex;

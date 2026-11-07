@@ -131,6 +131,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
     isPanzoomEnabled,
     setIsPanzoomEnabled,
     toggleFullscreen,
+    fullscreenModeRef,
   } = useMermaidControls({
     showCollapse,
     showSourceView,
@@ -186,6 +187,9 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
   }), [handleDownloadSVG, handleDownloadPNG]);
 
   const hasDiagram = !!svg;
+  // 降级全屏时内联覆盖 position（wrapper 平时靠内联 relative 锚定工具栏，
+  // class 里的 fixed 会被内联声明压掉，所以必须在内联层面切换）
+  const isFallbackFullscreen = isFullscreen && fullscreenModeRef.current === "fallback";
 
   return (
     <div
@@ -193,6 +197,7 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
       className={
         classNames.bind(style)(
           isFullscreen ? "mermaid-wrapper-fullscreen" : "",
+          isFallbackFullscreen ? "mermaid-wrapper-fullscreen-fallback" : "",
           showCollapse ? "mermaid-wrapper" : "",
           isCollapsed && showCollapse && !isMinimize ? "mermaid-collapsed" : "",
           className,
@@ -200,7 +205,11 @@ const MermaidRenderer = forwardRef<null, MermaidRendererProps>(function MermaidR
           isPrintPreview ? 'print-preview' : ''
         )
       }
-      style={{ minHeight: isMinimize ? 0 : minHeight, position: "relative", height: '100%' }}
+      style={{
+        minHeight: isMinimize ? 0 : minHeight,
+        position: isFallbackFullscreen ? "fixed" : "relative",
+        height: '100%',
+      }}
     >
       {!isPrintPreview && <>
         {showSourceView && <div className="mermaid-title">

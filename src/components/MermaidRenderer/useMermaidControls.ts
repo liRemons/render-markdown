@@ -31,6 +31,13 @@ export default function useMermaidControls({
   const ownFullscreenRef = useRef(false);
   /** 进入全屏前的展开状态，退出时原样还原 */
   const collapsedBeforeFullscreenRef = useRef<boolean | null>(null);
+  /**
+   * 本次全屏是原生 API 进入，还是 CSS 降级（fixed 铺满视口）进入。
+   * VSCode 等 Electron webview 宿主不支持 Fullscreen API，requestFullscreen 会直接 reject，
+   * 需要降级路径，并据此区分 Esc 退出该走 exitFullscreen 还是移除降级 class。
+   */
+  const fallbackFsRef = useRef(false);
+  const fullscreenModeRef = useRef<"native" | "fallback" | null>(null);
   const isCollapsedRef = useRef(isCollapsed);
   useEffect(() => {
     isCollapsedRef.current = isCollapsed;
@@ -108,6 +115,7 @@ export default function useMermaidControls({
 
       if (nowFullscreen) {
         ownFullscreenRef.current = true;
+        fullscreenModeRef.current = "native";
         collapsedBeforeFullscreenRef.current = isCollapsedRef.current;
         setIsFullscreen(true);
         // 全屏期间强制展开：.mermaid-collapsed 的 max-height 会把全屏容器压成 200px
@@ -116,6 +124,7 @@ export default function useMermaidControls({
       }
 
       ownFullscreenRef.current = false;
+      fullscreenModeRef.current = null;
       setIsFullscreen(false);
       // 还原进入全屏前的展开状态，而不是强制折叠
       if (showCollapse) {
@@ -127,20 +136,78 @@ export default function useMermaidControls({
     return () => document.removeEventListener("fullscreenchange", handler);
   }, [showCollapse, isPrintPreview, defaultCollapsed, wrapperRef]);
 
+  // 原生与降级两条路径共用同一出口，还原逻辑与 fullscreenchange 的退出分支保持一致
+  const exitFullscreen = useCallback(() => {
+    if (fallbackFsRef.current) {
+      fallbackFsRef.current = false;
+      fullscreenModeRef.current = null;
+      ownFullscreenRef.current = false;
+      setIsFullscreen(false);
+      if (showCollapse) {
+        setIsCollapsed(collapsedBeforeFullscreenRef.current ?? defaultCollapsed);
+      }
+      collapsedBeforeFullscreenRef.current = null;
+      return;
+    }
+    document.exitFullscreen?.().catch(() => { /* 用户手势失效等场景忽略 */ });
+  }, [showCollapse, defaultCollapsed]);
+
+  // 降级全屏没有原生 fullscreenchange / Esc 行为，需要自己监听 keydown 补上退出
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || !fallbackFsRef.current) return;
+      exitFullscreen();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [exitFullscreen]);
+
   // 只关心“本实例是否全屏”，不用全局 fullscreenElement 做分支：
   // 否则其它元素处于全屏时，本图表的全屏按钮会误退别人的全屏而自身进不去
   const toggleFullscreen = useCallback(() => {
     const el = wrapperRef.current;
     if (!el) return;
+    if (fallbackFsRef.current) {
+      exitFullscreen();
+      return;
+    }
     if (document.fullscreenElement === el) {
       document.exitFullscreen?.().catch(() => { /* 用户手势失效等场景忽略 */ });
       return;
     }
-    el.requestFullscreen?.().catch(() => {
-      // 非安全上下文（http）或被浏览器策略拒绝时会 reject，避免未处理的 Promise 拒绝
-      console.warn('[render-markdown] 进入全屏失败（可能被浏览器策略拒绝或非安全上下文）');
+    // VSCode 等 Electron webview 宿主里 fullscreenEnabled 为 false（或干脆没有该 API），
+    // 先做能力检测直接走 CSS 降级，不依赖 promise reject 的时机与形态
+    const nativeAvailable = document.fullscreenEnabled !== false && typeof el.requestFullscreen === "function";
+    if (!nativeAvailable) {
+      fallbackFsRef.current = true;
+      fullscreenModeRef.current = "fallback";
+      ownFullscreenRef.current = true;
+      collapsedBeforeFullscreenRef.current = isCollapsedRef.current;
+      setIsFullscreen(true);
+      setIsCollapsed(false);
+      return;
+    }
+    el.requestFullscreen?.().then(() => {
+      // 个别宿主（如 Electron webview）既不 reject 也不真正进入全屏：
+      // 微任务之后 fullscreenElement 仍不是本元素，则同样按降级处理
+      if (document.fullscreenElement !== el && fullscreenModeRef.current === null) {
+        fallbackFsRef.current = true;
+        fullscreenModeRef.current = "fallback";
+        ownFullscreenRef.current = true;
+        collapsedBeforeFullscreenRef.current = isCollapsedRef.current;
+        setIsFullscreen(true);
+        setIsCollapsed(false);
+      }
+    }).catch(() => {
+      console.warn('[render-markdown] 原生全屏被拒绝，降级为 CSS 全屏（宿主可能不支持 Fullscreen API）');
+      fallbackFsRef.current = true;
+      fullscreenModeRef.current = "fallback";
+      ownFullscreenRef.current = true;
+      collapsedBeforeFullscreenRef.current = isCollapsedRef.current;
+      setIsFullscreen(true);
+      setIsCollapsed(false);
     });
-  }, [wrapperRef]);
+  }, [wrapperRef, exitFullscreen]);
 
   return {
     isFullscreen,
@@ -156,5 +223,7 @@ export default function useMermaidControls({
     isPanzoomEnabled,
     setIsPanzoomEnabled,
     toggleFullscreen,
+    /** 'fallback' 表示当前是 CSS 降级全屏，宿主（VSCode webview / http 非安全上下文）不支持原生全屏 */
+    fullscreenModeRef,
   };
 }
