@@ -62,6 +62,8 @@ function ThemeSwitcher() {
 /** 流式（打字机）演示：同一份内容分别走增量 / 全量渲染，便于对比闪烁与状态丢失 */
 function StreamingDemo() {
   const [incremental, setIncremental] = useState(true);
+  const [wordCount, setWordCount] = useState(true);
+  const [wordCountTemplate, setWordCountTemplate] = useState('');
   const [streamText, setStreamText] = useState('');
   const [running, setRunning] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -117,6 +119,26 @@ function StreamingDemo() {
           />
           增量渲染（morphdom）
         </label>
+        <label className="demo-switch">
+          <input
+            type="checkbox"
+            checked={wordCount}
+            onChange={(e) => setWordCount(e.target.checked)}
+          />
+          字数统计
+        </label>
+        {wordCount && (
+          <label className="demo-switch">
+            文案模板
+            <input
+              className="demo-input"
+              type="text"
+              value={wordCountTemplate}
+              placeholder="共{total}字（留空用默认）"
+              onChange={(e) => setWordCountTemplate(e.target.value)}
+            />
+          </label>
+        )}
         <span className="demo-progress">{Math.round((streamText.length / STREAM_MD.length) * 100)}%</span>
       </div>
       <div className="demo-card" key={incremental ? 'inc' : 'full'}>
@@ -125,6 +147,8 @@ function StreamingDemo() {
           incremental={incremental}
           incrementalThrottleMs={16}
           showToc
+          showWordCount={wordCount}
+          wordCountTemplate={wordCountTemplate || undefined}
           toolbarDebounceMs={120}
         />
       </div>

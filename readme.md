@@ -73,10 +73,13 @@ import RenderMarkdown, {
   removeExcludedSelector,
   defaultValidateLink,
   registerCdn,
+  countWords,
+  formatWordCount,
+  DEFAULT_WORD_COUNT_TEMPLATE,
 } from 'remons-render-markdown';
 
 // 类型
-import type { RenderMarkdownProps, MarkdownPlugin, AnchorItem, ThemeMode } from 'remons-render-markdown';
+import type { RenderMarkdownProps, MarkdownPlugin, AnchorItem, ThemeMode, WordCountResult } from 'remons-render-markdown';
 
 // 样式（构建产物为 dist/index.css）
 import 'remons-render-markdown/style.css';
@@ -99,6 +102,8 @@ import 'remons-render-markdown/style.css';
 - **addExcludedSelector** / **removeExcludedSelector**: 图片预览的全局排除名单增删（默认名单已含 `pre` 与 `.mermaid-react-root`）
 - **defaultValidateLink**: 本库默认链接校验（markdown-it 原生名单 + 放行无脚本特征的内联 svg），自定义 `validateLink` 时可拿它做基线复用
 - **registerCdn**: 注册懒加载资源（如 mermaid）的默认 CDN 地址
+- **countWords**: Markdown 感知的字数统计函数，剥离语法标记后按正文计数，返回 `WordCountResult`
+- **formatWordCount** / **DEFAULT_WORD_COUNT_TEMPLATE**: 按 `{字段名}` 模板渲染字数文案（与组件 `wordCountTemplate` 同一实现）与内置默认模板 `'字数 {total}'`
 
 ### RenderMarkdown 组件 Props
 
@@ -119,6 +124,8 @@ import 'remons-render-markdown/style.css';
 | showBackTop | boolean | ❌ | `false` | 是否显示返回顶部按钮 |
 | backTopTarget | HTMLElement \| null \| (() => HTMLElement \| null) | ❌ | `document.body` | 返回顶部监听的滚动容器。传元素为初始化语义（仅首次渲染读取）；传 getter 则在 BackTop 挂载后（DOM 已提交）解析，返回 `null` 时逐帧重试（上限约 4s），用于滚动容器由本组件生成、宿主在 render 阶段取不到的场景（如 `.markdown-html`） |
 | footer | React.ReactNode | ❌ | - | 内容区下方的自定义底部 |
+| showWordCount | boolean | ❌ | `true` | 是否在内容底部展示字数统计（语法标记不计入）；传 `false` 关闭，非初始化语义，可随时切换 |
+| wordCountTemplate | string | ❌ | `'字数 {total}'` | 字数统计文案模板，`{字段名}` 为占位符（见下《字数统计文案模板》），非初始化语义 |
 | customRenderers | MarkdownPlugin[] | ❌ | - | 自定义 markdown-it 插件，在内置插件之后按序执行 |
 | transformSource | (text: string) => string | ❌ | - | 渲染前改写 mermaid 源码 |
 | defaultCollapsed | boolean | ❌ | `true` | 代码块 / 图表默认折叠状态 |
@@ -136,6 +143,31 @@ import 'remons-render-markdown/style.css';
 | `mermaidDebounce` | `toolbarDebounceMs` |
 | `useIncremental` | `incremental` |
 | `chartConfig` | `transformSource` |
+
+### 字数统计文案模板
+
+`wordCountTemplate` 用 `{字段名}` 占位符，字段名与 `countWords` 返回的 `WordCountResult` 一致：
+
+| 占位符 | 含义 |
+|--------|------|
+| `{total}` | 总字数（CJK 字符数 + 西文词数），默认展示项；可写作 `{wordCount}` / `{count}` |
+| `{chinese}` | CJK 字符数（中日韩，按字计） |
+| `{words}` | 西文词数（按词计） |
+| `{characters}` | 正文字符数（含空白） |
+| `{charactersWithoutSpaces}` | 正文字符数（不含空白） |
+
+```tsx
+<RenderMarkdown content={md} />                                // 字数 1234
+<RenderMarkdown content={md} wordCountTemplate="共{total}字" />   // 共 1234 字
+<RenderMarkdown
+  content={md}
+  wordCountTemplate="{total} 字（{chinese} 中文字 / {words} 英文词）"
+/>
+<RenderMarkdown content={md} showWordCount={false} />          {/* 关闭 */}
+```
+
+> 默认只展示 `{total}`，细分数据需要时写在模板里或直接用 `countWords` 自行取用。
+> `{total}` 另有 `{wordCount}` / `{count}` 两个别名；除此之外未知占位符（如 `{wordCounts}`）原样保留，便于发现字段名拼写错误；传空串或不传回到默认模板。
 
 ### markdownFormat 函数
 

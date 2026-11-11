@@ -8,6 +8,7 @@ import TocSidebar, { AnchorItem } from '../TocSidebar';
 import { copy } from 'methods-r';
 import classnames from 'classnames';
 import renderMarkdown, { MarkdownPlugin } from './utils/render-markdown';
+import { formatWordCount, countWords, DEFAULT_WORD_COUNT_TEMPLATE } from '@/utils/wordCount';
 import { syncTabState } from './utils/render-markdown/render-tab';
 import { FENCE_OPEN_CLASS } from './utils/render-markdown/fence-state';
 import { initImageToolbars, cleanupImageToolbars } from '../ImagePreview';
@@ -352,6 +353,19 @@ export interface RenderMarkdownProps {
    * `validateLink={(url) => myRule(url) || defaultValidateLink(url)}`
    */
   validateLink?: (url: string) => boolean;
+  /**
+   * 是否在内容底部展示字数统计，默认 true；传 false 关闭
+   */
+  showWordCount?: boolean;
+  /**
+   * 字数统计文案模板，`{字段名}` 为占位符，可选字段同 `WordCountResult`：
+   * `{total}` / `{chinese}` / `{words}` / `{characters}` / `{charactersWithoutSpaces}`
+   * （`{total}` 另有 `{wordCount}` / `{count}` 别名）。
+   * 如 `'共{wordCount}字'`、`'{total} 字（{chinese} 中文字）'`；
+   * 不传用默认 `'字数 {total}'`，未知占位符原样保留（便于发现字段名拼写错误）。
+   * 非初始化语义，可随时改
+   */
+  wordCountTemplate?: string;
 }
 
 
@@ -459,6 +473,8 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     showToc: enableToc,
     footer,
     incrementalThrottleMs,
+    showWordCount = true,
+    wordCountTemplate,
   } = props;
 
   // 新名优先、旧名兼容的统一取值（初始化语义的配置均仅首次读取）
@@ -555,6 +571,13 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   const showContent = incremental ? hasContent : !!html;
 
   // 合并渲染逻辑：content 变化时，先渲染 markdown，再防抖初始化工具栏 + Mermaid
+  // 字数统计：两种渲染模式都直接按 content 计算（语法标记不计入）；
+  // codeType 非 md 时 content 被包成围栏代码块，正文不计入，与渲染结果一致
+  const wordCount = React.useMemo(
+    () => countWords(content),
+    [content],
+  );
+
   useEffect(() => {
     let toolbarMermaidTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
@@ -746,6 +769,11 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       {showContent ? (
         <div className='markdown-html' ref={containerRef}>
           <div style={{ width: '100%' }} {...innerProps} />
+          {showWordCount && (
+            <div className="markdown-word-count" aria-label="字数统计">
+              {formatWordCount(wordCountTemplate ?? DEFAULT_WORD_COUNT_TEMPLATE, wordCount)}
+            </div>
+          )}
           {footer && <div className="markdown-footer">{footer}</div>}
         </div>
       ) : (

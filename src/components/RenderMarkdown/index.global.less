@@ -22,6 +22,16 @@
     align-items: center;
   }
 
+  /* 字数统计条：内容底部右对齐，次要文本色；文案由 wordCountTemplate 控制 */
+  .markdown-word-count {
+    margin-top: 8px;
+    text-align: right;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--remons-markdown-color-text-secondary, #57606a);
+    user-select: none;
+  }
+
   .create-time {
     background: var(--remons-markdown-color-bg-tooltip, #61616141);
     color: var(--remons-markdown-color-text, #ffffffde);
@@ -451,6 +461,10 @@ html[data-theme='dark'] .markdown {
   .markdown table {
     display: table;
     width: 100%;
+  }
+
+  .markdown-word-count {
+    display: none;
   }
 
   .code-handle {

@@ -62,10 +62,22 @@ import type { ThemeMode } from './hooks/useTheme'
 /** CDN 默认地址注册（mermaid 等懒加载资源） */
 import { registerCdn } from './utils/cdn'
 
+/**
+ * countWords / formatWordCount
+ * Markdown 感知的字数统计：剥离语法标记后按正文计数，CJK 按字符、西文按词。
+ * countWords 返回 { chinese, words, total, characters, charactersWithoutSpaces }，
+ * formatWordCount 按 `{字段名}` 模板渲染文案（与组件 wordCountTemplate 同一实现）
+ */
+import { countWords, formatWordCount, DEFAULT_WORD_COUNT_TEMPLATE } from './utils/wordCount'
+import type { WordCountResult } from './utils/wordCount'
+
 export default RenderMarkdown;
 
-export type { RenderMarkdownProps, MarkdownPlugin, AnchorItem, ThemeMode, ICircledClass };
+export type { RenderMarkdownProps, MarkdownPlugin, AnchorItem, ThemeMode, ICircledClass, WordCountResult };
 export {
+  countWords,
+  formatWordCount,
+  DEFAULT_WORD_COUNT_TEMPLATE,
   markdownFormat,
   languagesCommon,
   initHighlighter,
