@@ -330,6 +330,52 @@ ${CIRCLED_LINES.join('\n')}
 `;
 
 /**
+ * 下载验证用例（见 demo/App.tsx「Mermaid 下载验证」节）
+ * 取自 test.md：标签里同时含 <br/> 与裸 < （30≤P<70），默认 htmlLabels:true 会走 foreignObject，
+ * 产出的 SVG 非合法 XML 且 Chrome 不把 foreignObject 光栅化进 canvas —— 用于验证下载修复。
+ */
+export const MERMAID_DOWNLOAD_MD = `flowchart TD
+    A["现场调查 / 检测资料<br/>区域地质·遥感·勘察设计·巡检台账"] --> B["人工输入①<br/>指标分组 + 各组项数 n"]
+    A --> C["人工输入②<br/>重要性排序号 m<br/>（即表中“权重排序”）"]
+    A --> D["人工输入③<br/>取值 Rᵢⱼ<br/>按分级标准在区间内赋分"]
+
+    B --> E["程序计算<br/>权重系数 γ = f(n, m)<br/>式(3-1) / 查表3.4.1"]
+    C --> E
+    E --> F["程序计算<br/>评估分值 Sᵢⱼ = Rᵢⱼ × γᵢⱼ"]
+    D --> F
+    F --> G["程序计算<br/>总分 P = ∑Rᵢⱼγᵢⱼ（式3-2）"]
+
+    G --> H1["灾害易发性 P₁ = 42.098"]
+    G --> H2["挡（护）墙状态 P₂₃ = 54.81"]
+    G --> H3["灾害抑制性 P₂ = 53.24"]
+
+    H1 --> I1["查分级表<br/>30≤P<70 → 中"]
+    H2 --> I2["查分级表<br/>30≤P<70 → 一般"]
+    H3 --> I3["查分级表<br/>30≤P<70 → 一般"]
+
+    A --> J{"主控因素法<br/>是否触发直接判高？"}
+    J -- 是 --> K["直接判定：高风险<br/>不再进行指标体系法评分"]
+    J -- 否 --> L["矩阵法交叉<br/>易发性“中” × 抑制性“一般”"]
+
+    I1 --> L
+    I3 --> L
+    L --> M["灾害风险等级：中风险"]
+
+    M --> N{"是否处于隧道口·临江临河段<br/>·小半径曲线等艰险地段？"}
+    N -- 是 --> O["酌情升高一级 → 高风险"]
+    N -- 否 --> P["维持 中风险<br/>防洪地点等级Ⅱ/Ⅲ级<br/>防治等级：及时整治·尽快整治"]
+
+    style A fill:#e8f4f8,stroke:#2c7a9c
+    style E fill:#fff4e6,stroke:#c98a00
+    style F fill:#fff4e6,stroke:#c98a00
+    style G fill:#fff4e6,stroke:#c98a00
+    style K fill:#ffe0e0,stroke:#c0392b
+    style M fill:#fffacd,stroke:#b8860b
+    style O fill:#ffe0e0,stroke:#c0392b
+    style P fill:#e6f7e6,stroke:#2e8b57
+`;
+
+/**
  * 增量渲染残留自检用例（见 demo/App.tsx 第 10 节）
  * 每个用例给 before / after 两份源码：一次 content 更新从 before 直接切到 after，
  * 保证【恰好一次 morphdom patch】，不靠手速撞时序。

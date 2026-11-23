@@ -9,7 +9,7 @@ import RenderMarkdown, {
   type ThemeMode,
   type AnchorItem,
 } from '../index';
-import { SAMPLE_MD, STREAM_MD, UNSAFE_MD, VALIDATE_LINK_MD, CIRCLED_MD, RESIDUE_CASES } from './content';
+import { SAMPLE_MD, STREAM_MD, UNSAFE_MD, VALIDATE_LINK_MD, CIRCLED_MD, MERMAID_DOWNLOAD_MD, RESIDUE_CASES } from './content';
 import python from 'highlight.js/lib/languages/python';
 import go from 'highlight.js/lib/languages/go';
 import './demo.less';
@@ -282,7 +282,7 @@ function ResidueDemo() {
 
   return (
     <section className="demo-section">
-      <h2 className="demo-sectionTitle">10. 增量渲染残留自检（源码可编辑）</h2>
+      <h2 className="demo-sectionTitle">11. 增量渲染残留自检（源码可编辑）</h2>
       <p className="demo-desc">
         左栏 <code>incremental</code>（morphdom 差异化 patch）、右栏全量重建，两栏共用下面这个文本框。
         按用例行说明<strong>只做删除</strong>，然后看判定条：右栏永远是正确基线，
@@ -564,6 +564,26 @@ graph LR
         </p>
         <div className="demo-card demo-card--tall">
           <RenderMarkdown content={CIRCLED_MD} enableMermaid={false} />
+        </div>
+      </section>
+
+      <section className="demo-section">
+        <h2 className="demo-sectionTitle">10. Mermaid 下载验证（test.md 用例）</h2>
+        <p className="demo-desc">
+          标签里同时含 <code>&lt;br/&gt;</code> 与裸 <code>&lt;</code>（30≤P&lt;70）的流程图。
+          预览一直正常，重点是右上角下载菜单的 <strong>下载 SVG / 下载 PNG</strong>：
+          修复前 SVG 打开缺失报错、PNG 完全失败；关掉 <code>htmlLabels</code> 后两者都应正常。
+          顺带看预览里 ①②③ 序号是否大小一致。
+        </p>
+        <div className="demo-card demo-card--tall">
+          <MermaidChart
+            source={MERMAID_DOWNLOAD_MD}
+            showSourceView
+            showDownload
+            showCollapse
+            defaultCollapsed={false}
+            minHeight={480}
+          />
         </div>
       </section>
 

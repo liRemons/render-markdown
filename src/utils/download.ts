@@ -1,6 +1,28 @@
 ﻿import customMessage from '@/components/CustomMessage';
 
 /**
+ * 将 SVG 字符串规范化为合法 XML
+ * 背景：mermaid 产出的 SVG 在预览里用 HTML 宽松解析器渲染一切正常，但下载时
+ * —— .svg 文件用严格 XML 解析器打开、PNG 又把字符串喂给 <img>（同为严格 XML）——
+ * 标签里的裸 <（如 30≤P<70）、未自闭合的 <br> 等都会导致解析失败（PNG 的 img.onerror）。
+ * 这里用 DOMParser（text/html 宽松档）解析后，再用 XMLSerializer 严格序列化回 SVG 片段，
+ * 顺带补全 xmlns/xlink 命名空间，得到预览与下载一致、可被 <img> 正常加载的合法 XML。
+ */
+function normalizeSvg(svgStr: string): string {
+  try {
+    const doc = new DOMParser().parseFromString(svgStr, "text/html");
+    const svg = doc.querySelector("svg");
+    if (!svg) return svgStr;
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    svg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    return new XMLSerializer().serializeToString(svg);
+  } catch {
+    // 解析/序列化异常时退回原始字符串，至少不改变原有行为
+    return svgStr;
+  }
+}
+
+/**
  * 将 SVG 字符串转为 data URL
  * （unescape 已废弃，改用 TextEncoder 手动字节化，兼容非 ASCII 字符）
  */
@@ -56,7 +78,7 @@ export function downloadFile(data: Blob | string, filename: string) {
  * @param {string} filename - 文件名（不含后缀）
  */
 export function downloadSVG(svgStr: string, filename = "image") {
-  const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+  const blob = new Blob([normalizeSvg(svgStr)], { type: "image/svg+xml;charset=utf-8" });
   downloadFile(blob, `${filename}.svg`);
 }
 
@@ -67,8 +89,9 @@ export function downloadSVG(svgStr: string, filename = "image") {
  * @param {number} [scale=2] - 缩放倍数（提高清晰度）
  */
 export function downloadSVGAsPNG(svgStr: string, filename = "image", scale = 2) {
-  const { w, h } = getSvgSize(svgStr);
-  const url = svgToDataUrl(svgStr);
+  const normalized = normalizeSvg(svgStr);
+  const { w, h } = getSvgSize(normalized);
+  const url = svgToDataUrl(normalized);
 
   const img = new Image();
   img.crossOrigin = "anonymous";

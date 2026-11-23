@@ -68,6 +68,17 @@ export default function useMermaidRender({
       startOnLoad: false,
       theme: isDark ? "dark" : "default",
       securityLevel,
+      // 关闭 HTML 标签：默认 htmlLabels:true 会把含 <br/> 的标签当 HTML 塞进 <foreignObject>，
+      // 产出的 SVG 既非合法 XML（<br> 不自闭合、标签里的裸 < 未转义），Chrome 又不把 foreignObject
+      // 光栅化进 canvas —— 导致下载 SVG 报错缺失、PNG 完全失败。改用原生 <text>/<tspan> 渲染：
+      // <br/> 自动拆成多行 tspan，< 转义为 &lt;，预览与下载都走同一份合法、可光栅化的 SVG。
+      flowchart: { htmlLabels: false },
+      // 钉字体：默认西文栈不含 ①②③ 等符号字形，浏览器逐字符回退导致同一序号一大一小
+      // （同 RenderMarkdown 里 mdNum 的思路）；把符号/CJK 字体纳入栈首，序号取到一致字形。
+      // 该 font-family 会被写进 mermaid 注入的 <style>，故下载的 SVG 里同样生效。
+      themeVariables: {
+        fontFamily: "verdana, arial, 'Segoe UI Symbol', 'Noto Sans Symbols2', 'PingFang SC', 'Microsoft YaHei', sans-serif",
+      },
     });
   }, [mermaid, isDark, securityLevel]);
 
