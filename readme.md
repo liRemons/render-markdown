@@ -117,6 +117,7 @@ import 'remons-render-markdown/style.css';
 | codeType | string | ❌ | - | 按纯代码渲染（如 `'go'`），不传则按 Markdown 渲染 |
 | html | boolean | ❌ | `true` | 是否渲染源码中的原生 HTML；不可信内容请设为 `false`（增量/非增量均生效，初始化语义） |
 | validateLink | (url: string) => boolean | ❌ | `defaultValidateLink` | 覆盖链接校验（初始化语义）；不传则用本库默认（markdown-it 名单 + 放行内联 svg），详见《注意事项》第 12 条 |
+| footnoteLabel | string | ❌ | `'注释'` | 脚注区展开/收起开关（`<summary>`）的文案，有脚注时自动追加条数（如 `注释（3）`）；初始化语义，仅内容含脚注时生效 |
 | incremental | boolean | ❌ | `false` | 是否启用 morphdom 增量渲染 |
 | incrementalThrottleMs | number | ❌ | `16` | 增量渲染节流窗口（ms） |
 | toolbarDebounceMs | number | ❌ | `100` | content 变化后工具栏/图片/图表扫描的防抖延迟（ms） |
@@ -177,7 +178,7 @@ import 'remons-render-markdown/style.css';
 
 - `content: string` - Markdown 文本内容
 - `customPlugins?: MarkdownPlugin[]` - 自定义 markdown-it 插件
-- `options?: { html?: boolean; validateLink?: (url: string) => boolean }` - `html` 默认 `true`，渲染不可信内容时设为 `false`；`validateLink` 不传则用本库默认 `defaultValidateLink`（放行无脚本特征的 `data:image/svg+xml`），传入则整体接管
+- `options?: { html?: boolean; validateLink?: (url: string) => boolean; footnoteLabel?: string }` - `html` 默认 `true`，渲染不可信内容时设为 `false`；`validateLink` 不传则用本库默认 `defaultValidateLink`（放行无脚本特征的 `data:image/svg+xml`），传入则整体接管；`footnoteLabel` 为脚注开关文案（默认 `'注释'`）
 
 **返回值（Promise）：**
 

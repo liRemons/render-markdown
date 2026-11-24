@@ -39,3 +39,4 @@ declare module 'highlight.js/lib/languages/python';
 declare module 'highlight.js/lib/languages/go';
 declare module 'markdown-it-task-lists';
 declare module 'markdown-it-github-alerts';
+declare module 'markdown-it-footnote';

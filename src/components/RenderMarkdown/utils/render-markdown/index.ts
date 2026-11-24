@@ -6,8 +6,10 @@ import hljs from 'highlight.js/lib/core';
 import { tab } from "@mdit/plugin-tab";
 import MarkdownItGitHubAlerts from 'markdown-it-github-alerts';
 import taskList from 'markdown-it-task-lists';
+import markdownItFootnote from 'markdown-it-footnote';
 import { emptyTaskLists } from './empty-task-lists';
 import { circledNumbers } from './circled-numbers';
+import { footnoteCollapsible } from './render-footnote';
 import { markUnclosedFence } from './fence-state';
 import { defaultValidateLink } from './validate-link';
 import { alertTitles, alertIcons, postProcessAlerts } from './render-alert';
@@ -73,6 +75,11 @@ export interface RenderMarkdownOptions {
    * 初始化语义：随本次渲染调用生效，不保留上一例的覆盖。
    */
   validateLink?: (url: string) => boolean;
+  /**
+   * 脚注展开/收起开关的文案（`<summary>` 文本），默认 `'注释'`。
+   * 有脚注时自动追加条数（如 `脚注（3）`）；仅当内容含脚注时生效。初始化语义。
+   */
+  footnoteLabel?: string;
 }
 
 // ==================== 核心渲染 ====================
@@ -186,6 +193,11 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[],
     })
     .use(taskList)
     .use(emptyTaskLists)
+    // GFM 脚注：`[^1]` 引用 + `[^1]: 定义`，渲染为上标引用与文末脚注区
+    // （class：footnote-ref / footnotes-details / footnotes-summary / footnotes，样式见 index.global.less）
+    .use(markdownItFootnote)
+    // 紧跟其后把脚注区包进原生 <details>，得到默认收起的展开/收起开关（无 JS）
+    .use(footnoteCollapsible, { label: options?.footnoteLabel })
     // 带圈序号钉字体（样式见 index.global.less 的 .mdNum/.mdNumWide/.mdNumCjk）。
     // 不受 html 开关影响：产出是库自己生成的 html_inline，非用户源码里的 HTML
     .use(circledNumbers)
@@ -206,7 +218,11 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[],
   // 不传也接管：markdown-it 自带的默认不认内联 svg，这里换成本库默认
   md.validateLink = options?.validateLink ?? defaultValidateLink;
 
-  const tokens = md.parse(src, {});
+  // parse 与 render 必须共用同一个 env：markdown-it-footnote 的 footnote_tail
+  // 在 parse 阶段把 env.footnotes.list 写进 env，render 阶段的 block 规则要读它
+  // （若各传一个 {}，render 时 env.footnotes 为 undefined，脚注计数恒为 0）
+  const env: Record<string, any> = {};
+  const tokens = md.parse(src, env);
 
   // 流式输出时末尾的半截围栏会被 markdown-it 当成完整代码块输出，
   // 这里打标记供上层判断“不该拿残缺内容去渲染（如 Mermaid）”
@@ -222,7 +238,7 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[],
   // 注意：必须用 md.renderer.render(tokens, ...) 消费上面已解析的 tokens，
   // 不能写成 md.render(tokens)——后者会把入参当源码再 parse 一次并抛
   // "Input data should be a String"，导致整篇渲染为空
-  const info = postProcessAlerts(md.renderer.render(tokens, md.options, {}));
+  const info = postProcessAlerts(md.renderer.render(tokens, md.options, env));
   // DOM 由消费方挂载完成后再初始化 tab 交互
   queueMicrotask(() => renderTab());
 

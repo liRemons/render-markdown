@@ -354,6 +354,11 @@ export interface RenderMarkdownProps {
    */
   validateLink?: (url: string) => boolean;
   /**
+   * 脚注展开/收起开关的文案（`<summary>`），默认 `'注释'`，有脚注时自动追加条数（如 `注释（3）`）。
+   * 初始化语义；仅当内容含脚注时生效
+   */
+  footnoteLabel?: string;
+  /**
    * 是否在内容底部展示字数统计，默认 true；传 false 关闭
    */
   showWordCount?: boolean;
@@ -561,6 +566,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     // 初始化语义：增量模式下 html 只在挂载时取一次（非增量模式每次渲染读取）
     html: resolved.html,
     validateLink: props.validateLink,
+    footnoteLabel: props.footnoteLabel,
     onNodeDiscarded: handleNodeDiscarded,
     onPatched: handlePatched,
   });
@@ -605,6 +611,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
             {
               html: resolveProps(propsRef.current).html,
               validateLink: propsRef.current.validateLink,
+              footnoteLabel: propsRef.current.footnoteLabel,
             }
           );
         } catch (err) {

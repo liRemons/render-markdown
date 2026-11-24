@@ -225,7 +225,6 @@
     li.task-list-item {
       list-style: none;
       align-items: center;
-      display: flex;
 
 
       .task-list-item-checkbox {
@@ -424,7 +423,86 @@
     .circledNum();
     font-size: 1em;
   }
+
+  /*
+   * 脚注（markdown-it-footnote + render-footnote 的 <details> 包裹）：
+   * 正文里的 `[^1]` 渲染为 `sup.footnote-ref > a`，文末生成
+   * `details.footnotes-details > summary.footnotes-summary + section.footnotes`。
+   * <details> 默认 closed，summary 即展开/收起开关（兼作分隔行，无 JS），已不再输出 `hr.footnotes-sep`。
+   */
+  .footnote-ref {
+    font-size: 0.75em;
+    line-height: 0;
+    /* 上标里再挂全局正文链接的下划线会显乱，这里去掉 */
+    a {
+      text-decoration: none;
+      color: var(--remons-markdown-color-text-primary);
+    }
+  }
+
+  /* 展开/收起开关：去掉浏览器默认三角，换成自定义 caret，[open] 时旋转 90° */
+  .footnotes-summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 0.875em;
+    color: var(--remons-markdown-color-text-secondary, #57606a);
+    user-select: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::before {
+      content: '';
+      width: 0;
+      height: 0;
+      border-left: 5px solid currentColor;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      transition: transform 0.15s ease;
+    }
+  }
+
+  .footnotes-details[open] > .footnotes-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .footnotes-details[open] > .footnotes {
+    margin-top: 6px;
+  }
+
+  .footnotes {
+    font-size: 0.875em;
+    color: var(--remons-markdown-color-text-secondary, #57606a);
+
+    .footnotes-list {
+      padding-left: 1.5em;
+      margin: 0;
+    }
+
+    .footnote-item {
+      margin: 4px 0;
+      line-height: 1.6;
+    }
+
+    /* 回链箭头：与引用号同色系，去掉正文链接的下划线 */
+    .footnote-backref {
+      font-size: 12px;
+      text-decoration: none;
+      color: var(--remons-markdown-color-text-primary);
+    }
+  }
 }
+
+/*
+ * 正文上标 [^n] 默认收起时也能跳转：现代浏览器（Chrome 120+ / Firefox / Safari 16.4+）
+ * 在“:target 落在闭合 <details> 内”时会自动把它 open，无需额外 CSS。
+ * 旧的 :has(:target) 强制显示写法无效（closed details 通过 shadow slot 隐子节点，
+ * 给子元素设 display 盖不过），故不采用。
+ */
 
 /*
  * 正文链接常驻下划线：原来靠浏览器 UA 默认样式，宿主自带 reset（把 a 的

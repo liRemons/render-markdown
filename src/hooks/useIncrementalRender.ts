@@ -38,6 +38,11 @@ interface UseIncrementalRenderOptions {
    */
   validateLink?: RenderMarkdownOptions['validateLink'];
   /**
+   * 脚注展开/收起开关文案（默认 `'注释'`）。
+   * 初始化语义：仅在挂载时读取
+   */
+  footnoteLabel?: RenderMarkdownOptions['footnoteLabel'];
+  /**
    * 节点被 morphdom diff 移除后触发（含被移除子树的递归子节点）。
    * 用于清理挂在被移除节点上的 React Root、监听器等状态。
    */
@@ -363,6 +368,7 @@ export function useIncrementalRender({
   throttleMs = 16,
   html = true,
   validateLink,
+  footnoteLabel,
   onNodeDiscarded,
   onPatched,
 }: UseIncrementalRenderOptions) {
@@ -377,7 +383,7 @@ export function useIncrementalRender({
 
   // 初始化语义：选项在挂载时固定，后续变更不感知；
   // 同时让 doRenderAndPatch/schedulePatch 保持稳定引用，避免 effect 依赖抖动丢失节流定时器
-  const initOptionsRef = useRef({ codeType, customRenderers, throttleMs, html, validateLink });
+  const initOptionsRef = useRef({ codeType, customRenderers, throttleMs, html, validateLink, footnoteLabel });
 
   const callbacksRef = useRef({ onNodeDiscarded, onPatched });
   callbacksRef.current = { onNodeDiscarded, onPatched };
@@ -386,7 +392,7 @@ export function useIncrementalRender({
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doRenderAndPatch = useCallback(async (rawContent: string, seq: number, retries = 0) => {
-    const { codeType: initCodeType, customRenderers: initRenderers, html: initHtml, validateLink: initValidateLink } = initOptionsRef.current;
+    const { codeType: initCodeType, customRenderers: initRenderers, html: initHtml, validateLink: initValidateLink, footnoteLabel: initFootnoteLabel } = initOptionsRef.current;
     const text = (!initCodeType || initCodeType?.toLocaleLowerCase() === 'md')
       ? rawContent
       : '```' + initCodeType + '\n' + rawContent + '\n```';
@@ -406,7 +412,7 @@ export function useIncrementalRender({
     };
 
     try {
-      markdownInfo = await renderMarkdown(text, initRenderers, { html: initHtml, validateLink: initValidateLink });
+      markdownInfo = await renderMarkdown(text, initRenderers, { html: initHtml, validateLink: initValidateLink, footnoteLabel: initFootnoteLabel });
     } catch (err) {
       /*
        * 渲染抛错（自定义插件报错、CDN 抖动、后台标签页里网络被挂起等）不能静默放弃：

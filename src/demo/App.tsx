@@ -9,7 +9,7 @@ import RenderMarkdown, {
   type ThemeMode,
   type AnchorItem,
 } from '../index';
-import { SAMPLE_MD, STREAM_MD, UNSAFE_MD, VALIDATE_LINK_MD, CIRCLED_MD, MERMAID_DOWNLOAD_MD, RESIDUE_CASES } from './content';
+import { SAMPLE_MD, STREAM_MD, UNSAFE_MD, VALIDATE_LINK_MD, CIRCLED_MD, MERMAID_DOWNLOAD_MD, FOOTNOTE_MD, RESIDUE_CASES } from './content';
 import python from 'highlight.js/lib/languages/python';
 import go from 'highlight.js/lib/languages/go';
 import './demo.less';
@@ -282,7 +282,7 @@ function ResidueDemo() {
 
   return (
     <section className="demo-section">
-      <h2 className="demo-sectionTitle">11. 增量渲染残留自检（源码可编辑）</h2>
+      <h2 className="demo-sectionTitle">12. 增量渲染残留自检（源码可编辑）</h2>
       <p className="demo-desc">
         左栏 <code>incremental</code>（morphdom 差异化 patch）、右栏全量重建，两栏共用下面这个文本框。
         按用例行说明<strong>只做删除</strong>，然后看判定条：右栏永远是正确基线，
@@ -409,6 +409,36 @@ function ResidueDemo() {
             <RenderMarkdown key={`full-${remountKey}`} content={src} enableMermaid={false} />
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/** 脚注渲染演示（markdown-it-footnote） */
+function FootnoteDemo() {
+  const [footnoteLabel, setFootnoteLabel] = useState('注释');
+  return (
+    <section className="demo-section">
+      <h2 className="demo-sectionTitle">11. 脚注渲染（markdown-it-footnote）</h2>
+      <p className="demo-desc">
+        正文里的 <code>[^1]</code> 渲染为上标引用，文末脚注区默认收起，由 <code>&lt;details&gt;</code> 的
+        <code>summary</code>（“脚注（N）”）作为展开/收起开关（兼作分隔行，无 JS），每条脚注带回链。
+        开关文案可通过 <code>footnoteLabel</code> 配置（下方输入框，初始化语义，改后会重新挂载）。
+      </p>
+      <div className="demo-controls">
+        <label className="demo-switch">
+          开关文案
+          <input
+            className="demo-input"
+            type="text"
+            value={footnoteLabel}
+            placeholder="注释"
+            onChange={(e) => setFootnoteLabel(e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="demo-card demo-card--tall" key={`fn-${footnoteLabel}`}>
+        <RenderMarkdown content={FOOTNOTE_MD} footnoteLabel={footnoteLabel || undefined} enableMermaid={false} />
       </div>
     </section>
   );
@@ -586,6 +616,8 @@ graph LR
           />
         </div>
       </section>
+
+      <FootnoteDemo />
 
       <ResidueDemo />
     </div>
