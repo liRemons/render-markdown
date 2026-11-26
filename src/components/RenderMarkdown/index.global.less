@@ -433,6 +433,7 @@
   .footnote-ref {
     font-size: 0.75em;
     line-height: 0;
+
     /* 上标里再挂全局正文链接的下划线会显乱，这里去掉 */
     a {
       text-decoration: none;
@@ -466,11 +467,11 @@
     }
   }
 
-  .footnotes-details[open] > .footnotes-summary::before {
+  .footnotes-details[open]>.footnotes-summary::before {
     transform: rotate(90deg);
   }
 
-  .footnotes-details[open] > .footnotes {
+  .footnotes-details[open]>.footnotes {
     margin-top: 6px;
   }
 
@@ -485,7 +486,12 @@
 
     .footnote-item {
       margin: 4px 0;
-      line-height: 1.6;
+      line-height: 1.4;
+      font-size: 12px;
+
+      p {
+        font-size: 12px;
+      }
     }
 
     /* 回链箭头：与引用号同色系，去掉正文链接的下划线 */
