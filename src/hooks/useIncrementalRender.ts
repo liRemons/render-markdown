@@ -43,6 +43,11 @@ interface UseIncrementalRenderOptions {
    */
   footnoteLabel?: RenderMarkdownOptions['footnoteLabel'];
   /**
+   * 是否由业务方接管文末脚注区（不再输出默认脚注 HTML）。
+   * 初始化语义：仅在挂载时读取
+   */
+  customFootnotes?: RenderMarkdownOptions['customFootnotes'];
+  /**
    * 节点被 morphdom diff 移除后触发（含被移除子树的递归子节点）。
    * 用于清理挂在被移除节点上的 React Root、监听器等状态。
    */
@@ -369,10 +374,12 @@ export function useIncrementalRender({
   html = true,
   validateLink,
   footnoteLabel,
+  customFootnotes,
   onNodeDiscarded,
   onPatched,
 }: UseIncrementalRenderOptions) {
   const [anchors, setAnchors] = useState<AnchorItem[]>([]);
+  const [footnoteLabels, setFootnoteLabels] = useState<string[]>([]);
   const [hasContent, setHasContent] = useState(false);
 
   const lastContentRef = useRef('');
@@ -383,7 +390,7 @@ export function useIncrementalRender({
 
   // 初始化语义：选项在挂载时固定，后续变更不感知；
   // 同时让 doRenderAndPatch/schedulePatch 保持稳定引用，避免 effect 依赖抖动丢失节流定时器
-  const initOptionsRef = useRef({ codeType, customRenderers, throttleMs, html, validateLink, footnoteLabel });
+  const initOptionsRef = useRef({ codeType, customRenderers, throttleMs, html, validateLink, footnoteLabel, customFootnotes });
 
   const callbacksRef = useRef({ onNodeDiscarded, onPatched });
   callbacksRef.current = { onNodeDiscarded, onPatched };
@@ -392,7 +399,7 @@ export function useIncrementalRender({
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doRenderAndPatch = useCallback(async (rawContent: string, seq: number, retries = 0) => {
-    const { codeType: initCodeType, customRenderers: initRenderers, html: initHtml, validateLink: initValidateLink, footnoteLabel: initFootnoteLabel } = initOptionsRef.current;
+    const { codeType: initCodeType, customRenderers: initRenderers, html: initHtml, validateLink: initValidateLink, footnoteLabel: initFootnoteLabel, customFootnotes: initCustomFootnotes } = initOptionsRef.current;
     const text = (!initCodeType || initCodeType?.toLocaleLowerCase() === 'md')
       ? rawContent
       : '```' + initCodeType + '\n' + rawContent + '\n```';
@@ -412,7 +419,7 @@ export function useIncrementalRender({
     };
 
     try {
-      markdownInfo = await renderMarkdown(text, initRenderers, { html: initHtml, validateLink: initValidateLink, footnoteLabel: initFootnoteLabel });
+      markdownInfo = await renderMarkdown(text, initRenderers, { html: initHtml, validateLink: initValidateLink, footnoteLabel: initFootnoteLabel, customFootnotes: initCustomFootnotes });
     } catch (err) {
       /*
        * 渲染抛错（自定义插件报错、CDN 抖动、后台标签页里网络被挂起等）不能静默放弃：
@@ -447,6 +454,7 @@ export function useIncrementalRender({
       }
 
       setAnchors(markdownInfo.anchor || []);
+      setFootnoteLabels(markdownInfo.footnoteLabels || []);
 
       /*
        * 渲染结果为空（正文只剩空白/换行，或 html=false 时源码只有标签）：
@@ -466,6 +474,7 @@ export function useIncrementalRender({
         // 交还占位后容器会被 React 卸载重建，下一轮按首帧 innerHTML 走最稳
         isInitialRef.current = true;
         setHasContent(false);
+        setFootnoteLabels([]);
         callbacksRef.current.onPatched?.();
         return;
       }
@@ -613,6 +622,7 @@ export function useIncrementalRender({
       setHasContent(false);
       // 锚点同步清空：否则 TOC 按钮与面板继续挂着已删除标题的死链接
       setAnchors([]);
+      setFootnoteLabels([]);
       lastContentRef.current = '';
       const inner = innerDivRef.current;
       if (inner) clearContainer(inner, callbacksRef.current.onNodeDiscarded);
@@ -659,7 +669,7 @@ export function useIncrementalRender({
     innerDivRef.current = node;
   }, []);
 
-  return { anchors, hasContent, setInnerRef };
+  return { anchors, footnoteLabels, hasContent, setInnerRef };
 }
 
 export default useIncrementalRender;

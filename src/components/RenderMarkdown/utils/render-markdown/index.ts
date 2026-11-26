@@ -80,6 +80,11 @@ export interface RenderMarkdownOptions {
    * 有脚注时自动追加条数（如 `脚注（3）`）；仅当内容含脚注时生效。初始化语义。
    */
   footnoteLabel?: string;
+  /**
+   * 使用业务方传入的脚注条目替换文末脚注区（由 `RenderMarkdown` 渲染 ReactNode[]）。
+   * 开启后不再输出默认脚注 HTML，避免同一条脚注出现两次。
+   */
+  customFootnotes?: boolean;
 }
 
 // ==================== 核心渲染 ====================
@@ -228,6 +233,27 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[],
   // 这里打标记供上层判断“不该拿残缺内容去渲染（如 Mermaid）”
   markUnclosedFence(tokens, src);
 
+  // 业务方接管脚注区时，从 token 流里整段剔除默认脚注块：
+  // 只在渲染阶段跳过，解析期的 env.footnotes 与正文引用标记保持不变。
+  const renderTokens = options?.customFootnotes
+    ? (() => {
+        const filtered: MdToken[] = [];
+        let insideFootnoteBlock = false;
+        for (const token of tokens) {
+          if (token.type === 'footnote_block_open') {
+            insideFootnoteBlock = true;
+            continue;
+          }
+          if (insideFootnoteBlock) {
+            if (token.type === 'footnote_block_close') insideFootnoteBlock = false;
+            continue;
+          }
+          filtered.push(token);
+        }
+        return filtered;
+      })()
+    : tokens;
+
   // KaTeX 不可用时，math token 无渲染规则会原样输出，这里显式降级为转义文本
   if (!katexAvailable) {
     md.renderer.rules.katex_inline = (tk: MdToken[], idx: number) => escapeHtml(tk[idx].content || '');
@@ -238,13 +264,16 @@ async function renderMarkdown(content: string, customPlugins?: MarkdownPlugin[],
   // 注意：必须用 md.renderer.render(tokens, ...) 消费上面已解析的 tokens，
   // 不能写成 md.render(tokens)——后者会把入参当源码再 parse 一次并抛
   // "Input data should be a String"，导致整篇渲染为空
-  const info = postProcessAlerts(md.renderer.render(tokens, md.options, env));
+  const info = postProcessAlerts(md.renderer.render(renderTokens, md.options, env));
   // DOM 由消费方挂载完成后再初始化 tab 交互
   queueMicrotask(() => renderTab());
 
   return {
-    anchor: collectAnchors(tokens),
+    anchor: collectAnchors(renderTokens),
     info,
+    // 正文实际定义了的脚注标签（如 1、2、3、4）；业务方脚注数组按这个映射，
+    // 不能拿“传入数组长度”当脚注数量，否则未引用的来源会全部堆到文末。
+    footnoteLabels: (env?.footnotes?.list ?? []).map((item: any) => String(item.label)),
   };
 }
 

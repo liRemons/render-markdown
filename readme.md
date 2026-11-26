@@ -118,7 +118,8 @@ import 'remons-render-markdown/style.css';
 | html | boolean | ❌ | `true` | 是否渲染源码中的原生 HTML；不可信内容请设为 `false`（增量/非增量均生效，初始化语义） |
 | validateLink | (url: string) => boolean | ❌ | `defaultValidateLink` | 覆盖链接校验（初始化语义）；不传则用本库默认（markdown-it 名单 + 放行内联 svg），详见《注意事项》第 12 条 |
 | footnoteLabel | string | ❌ | `'注释'` | 脚注区展开/收起开关（`<summary>`）的文案，有脚注时自动追加条数（如 `注释（3）`）；初始化语义，仅内容含脚注时生效 |
-| footnotePreview | ReactNode[] | ❌ | - | 直接传入脚注预览组件数组，`[n - 1]` 对应正文 `[^n]`；点击后在脚注旁弹出该项，数组为空时保留原生跳转 |
+| footnoteItems | ReactNode[] | ❌ | - | 业务方自定义的文末脚注条目数组，`[n - 1]` 对应正文 `[^n]`；包只按正文实际定义了的脚注渲染对应条目，未引用的数组项不会显示；点击/预览等交互由传入组件自行实现 |
+| footnoteSummary | ReactNode | ❌ | - | 自定义脚注区标题，覆盖默认的 `footnoteLabel（条目数）`；用于「5 处引用 · 2 篇文档」等业务聚合口径，仅使用 footnoteItems 时生效 |
 | incremental | boolean | ❌ | `false` | 是否启用 morphdom 增量渲染 |
 | incrementalThrottleMs | number | ❌ | `16` | 增量渲染节流窗口（ms） |
 | toolbarDebounceMs | number | ❌ | `100` | content 变化后工具栏/图片/图表扫描的防抖延迟（ms） |
