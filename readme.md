@@ -118,6 +118,7 @@ import 'remons-render-markdown/style.css';
 | html | boolean | ❌ | `true` | 是否渲染源码中的原生 HTML；不可信内容请设为 `false`（增量/非增量均生效，初始化语义） |
 | validateLink | (url: string) => boolean | ❌ | `defaultValidateLink` | 覆盖链接校验（初始化语义）；不传则用本库默认（markdown-it 名单 + 放行内联 svg），详见《注意事项》第 12 条 |
 | footnoteLabel | string | ❌ | `'注释'` | 脚注区展开/收起开关（`<summary>`）的文案，有脚注时自动追加条数（如 `注释（3）`）；初始化语义，仅内容含脚注时生效 |
+| footnotePreview | ReactNode[] | ❌ | - | 直接传入脚注预览组件数组，`[n - 1]` 对应正文 `[^n]`；点击后在脚注旁弹出该项，数组为空时保留原生跳转 |
 | incremental | boolean | ❌ | `false` | 是否启用 morphdom 增量渲染 |
 | incrementalThrottleMs | number | ❌ | `16` | 增量渲染节流窗口（ms） |
 | toolbarDebounceMs | number | ❌ | `100` | content 变化后工具栏/图片/图表扫描的防抖延迟（ms） |

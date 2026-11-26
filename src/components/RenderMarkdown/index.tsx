@@ -4,6 +4,7 @@ import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
 import CustomBackTop from '@/components/CustomBackTop';
 import Empty from '@/components/Empty';
+import FootnotePreview from '@/components/FootnotePreview';
 import TocSidebar, { AnchorItem } from '../TocSidebar';
 import { copy } from 'methods-r';
 import classnames from 'classnames';
@@ -359,6 +360,14 @@ export interface RenderMarkdownProps {
    */
   footnoteLabel?: string;
   /**
+   * 自定义脚注预览组件数组，直接按脚注编号对应：
+   * `[n - 1]` 对应正文里的 `[^n]`；点击后该项会在脚注旁弹出。
+   * 不传或数组为空时保持原生 `<a href="#fnN">` 跳转行为。
+   *
+   * 例：`footnotePreview={sources.map((s) => <SourceCard source={s} />)}`
+   */
+  footnotePreview?: React.ReactNode[];
+  /**
    * 是否在内容底部展示字数统计，默认 true；传 false 关闭
    */
   showWordCount?: boolean;
@@ -490,6 +499,11 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   const [anchors, setAnchors] = useState<AnchorItem[]>([]);
   const [activeId, setActiveId] = useState('');
   const [showToc, setShowToc] = useState(false);
+  const [footnotePreviewState, setFootnotePreviewState] = useState<{
+    index: number;
+    label: string;
+    rect: DOMRect;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const innerDivRef = useRef<HTMLDivElement | null>(null);
   const preSnapshotRef = useRef<CodeBlockSnapshot | null>(null);
@@ -515,6 +529,9 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     if (typeof target === 'function') return target();
     return backTopTargetRef.current;
   }, []);
+
+  const closeFootnotePreview = useCallback(() => setFootnotePreviewState(null), []);
+  const hasFootnotePreview = Boolean(props.footnotePreview?.length);
 
   // 增量渲染：diff 移除节点时清理其中的代码工具栏 React Root，避免 Root 泄漏
   const handleNodeDiscarded = useCallback((el: HTMLElement) => {
@@ -575,6 +592,52 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
   const effectiveAnchors = incremental ? incAnchors : anchors;
   // 合并两种模式的内容判断
   const showContent = incremental ? hasContent : !!html;
+
+  // 脚注预览：业务方传了 footnotePreview 才接管点击，否则保留原生跳转。
+  // 事件挂在容器上而不是给每个 <a> 单独绑定：
+  // - 非增量模式会整体替换 innerHTML，逐节点绑定会丢
+  // - 增量模式的 morphdom patch 也可能替换脚注节点
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !showContent) return;
+
+    const handleFootnoteClick = (event: globalThis.MouseEvent) => {
+      if (!propsRef.current.footnotePreview?.length) return;
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest('a[href^="#fn"]') as HTMLAnchorElement | null;
+      if (!anchor || !container.contains(anchor)) return;
+
+      const href = anchor.getAttribute('href') || '';
+      const match = /^#fn(\d+)/.exec(href);
+      if (!match) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const index = Number(match[1]);
+      const definition = container.querySelector(`#fn${index}`) as HTMLElement | null;
+      let label = '';
+      if (definition) {
+        const clone = definition.cloneNode(true) as HTMLElement;
+        clone.querySelectorAll('.footnote-backref').forEach((node) => node.remove());
+        label = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+      }
+
+      setFootnotePreviewState((prev) =>
+        prev?.index === index
+          ? null
+          : { index, label, rect: anchor.getBoundingClientRect() }
+      );
+    };
+
+    container.addEventListener('click', handleFootnoteClick);
+    return () => container.removeEventListener('click', handleFootnoteClick);
+  }, [showContent]);
+
+  // 业务方撤掉 preview 能力时，立即收起已打开的浮层
+  useEffect(() => {
+    if (!hasFootnotePreview) setFootnotePreviewState(null);
+  }, [hasFootnotePreview]);
 
   // 合并渲染逻辑：content 变化时，先渲染 markdown，再防抖初始化工具栏 + Mermaid
   // 字数统计：两种渲染模式都直接按 content 计算（语法标记不计入）；
@@ -771,6 +834,10 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
     ? { ref: setInnerRef }
     : { ref: innerDivRef, dangerouslySetInnerHTML: { __html: html } };
 
+  const footnotePreviewNode = footnotePreviewState
+    ? props.footnotePreview?.[footnotePreviewState.index - 1]
+    : null;
+
   return (
     <div className='markdown'>
       {showContent ? (
@@ -786,6 +853,13 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
       ) : (
         <Empty />
       )}
+      {hasFootnotePreview && footnotePreviewState ? (
+        <FootnotePreview anchorRect={footnotePreviewState.rect} onClose={closeFootnotePreview}>
+          {footnotePreviewNode ?? (
+            <div style={{ fontSize: 13, lineHeight: 1.6 }}>{footnotePreviewState.label}</div>
+          )}
+        </FootnotePreview>
+      ) : null}
       {showBackTop && <CustomBackTop target={getBackTopTarget} />}
 
       {/* 目录按钮 */}
