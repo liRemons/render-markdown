@@ -1,8 +1,17 @@
 import React, { useEffect, useState, useRef, useCallback, useLayoutEffect } from 'react';
-import { CopyFilled, CaretRightOutlined, CaretDownOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import {
+  CopyFilled,
+  CaretRightOutlined,
+  CaretDownOutlined,
+  UnorderedListOutlined,
+  FileTextOutlined,
+  PictureOutlined,
+  LinkOutlined,
+} from '@ant-design/icons';
 import { createRoot, Root } from 'react-dom/client';
 import customMessage from '@/components/CustomMessage';
 import CustomBackTop from '@/components/CustomBackTop';
+import CustomTooltip from '@/components/CustomTooltip';
 import Empty from '@/components/Empty';
 import TocSidebar, { AnchorItem } from '../TocSidebar';
 import { copy } from 'methods-r';
@@ -241,6 +250,69 @@ function CodeToggle({ preNode }: { preNode: HTMLElement }) {
 }
 
 
+/**
+ * 文末脚注条目数据。由业务方按 `[n - 1]` 对应正文 `[^n]` 传入。
+ * 行图标、编号、文档名、章节/页码和预览按钮由包统一渲染；
+ * `onFootnotePreview` 只负责通知业务方打开预览。
+ */
+export interface FootnoteItem {
+  /** 文档名 */
+  docName: string;
+  /** 命中的区域说明，如「表6 · 3.2 节」 */
+  details?: string;
+  /** 文档页码 */
+  pageNo?: number;
+  /** 文本或图片，决定行首图标 */
+  type?: 'text' | 'image';
+  /** 业务方是否允许打开预览；为 true 且传入 onFootnotePreview 时显示链接图标 */
+  previewable?: boolean;
+}
+
+function FootnoteRow({
+  citation,
+  item,
+  onPreview,
+}: {
+  citation: number;
+  item: FootnoteItem;
+  onPreview?: (citation: number) => void;
+}) {
+  const canPreview = Boolean(item.previewable && onPreview);
+  const hasImage = item.type === 'image';
+
+  return (
+    <div className={`source-footnote${canPreview ? ' is-previewable' : ''}`}>
+      <span className="source-footnote-citation-number" aria-label={`引用编号 ${citation}`}>
+        [{citation}]
+      </span>
+      {hasImage ? (
+        <PictureOutlined className="source-footnote-icon" />
+      ) : (
+        <FileTextOutlined className="source-footnote-icon" />
+      )}
+      <span className="source-footnote-title" title={item.docName}>{item.docName}</span>
+      {item.details ? (
+        <span className="source-footnote-detail" title={item.details}>{item.details}</span>
+      ) : null}
+      {item.pageNo != null ? <span className="source-footnote-meta">第 {item.pageNo} 页</span> : null}
+      {canPreview ? (
+        <span className="source-footnote-action-wrap">
+          <CustomTooltip title="查看全文">
+            <button
+              type="button"
+              className="source-footnote-action"
+              aria-label="查看全文"
+              onClick={() => onPreview?.(citation)}
+            >
+              <LinkOutlined />
+            </button>
+          </CustomTooltip>
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export interface RenderMarkdownProps {
   /**
    * Markdown 内容
@@ -361,13 +433,19 @@ export interface RenderMarkdownProps {
   /**
    * 业务方自定义的文末脚注条目数组，按脚注编号直接对应：
    * `[n - 1]` 对应正文里的 `[^n]`。包只按正文实际定义了的脚注渲染对应条目，
-   * 未引用的数组项不会显示；不绑定点击/预览，交互由传入的 ReactNode 自行实现。
+   * 未引用的数组项不会显示。
    *
-   * 传入数组后默认脚注 HTML 不再输出；`footnoteLabel` 仍用于折叠区文案。
+   * 传入数组后默认脚注 HTML 不再输出；行内的编号、图标、文档名、章节/页码
+   * 和预览按钮由包渲染，预览动作通过 `onFootnotePreview` 交给业务方处理。
    *
-   * 例：`footnoteItems={sources.map((s) => <SourceCard source={s} />)}`
+   * 例：`footnoteItems={sources.map((s) => ({ docName: s.name, details: s.section }))}`
    */
-  footnoteItems?: React.ReactNode[];
+  footnoteItems?: Array<FootnoteItem | null>;
+  /**
+   * 点击脚注行「查看全文」时触发，参数为正文里的脚注编号（从 1 开始）。
+   * 仅当对应条目 `previewable` 为 true 时按钮才显示。
+   */
+  onFootnotePreview?: (citation: number) => void;
   /**
    * 自定义脚注区标题（`<summary>` 的内容）。传入后覆盖默认的
    * `footnoteLabel（条目数）`，供业务方展示「5 处引用 · 2 篇文档」这类聚合口径。
@@ -609,7 +687,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
         const num = Number.isInteger(parsed) && parsed > 0 ? parsed : order + 1;
         return { num, item: footnoteItems[num - 1] };
       })
-      .filter((entry) => entry.item != null)
+      .filter((entry): entry is { num: number; item: FootnoteItem } => entry.item != null)
       // 模型可能先引用 [^3]、再引用 [^1]；列表仍按编号升序，避免出现
       // 3、5、1、2、4 这种看起来没有规律的顺序。
       .sort((a, b) => a.num - b.num);
@@ -836,7 +914,7 @@ export default function RenderMarkdown(props: RenderMarkdownProps) {
             <ol className='footnotes-list'>
               {customFootnoteEntries.map(({ num, item }) => (
                 <li key={num} id={`fn${num}`} value={num} className='footnote-item'>
-                  {item}
+                  <FootnoteRow citation={num} item={item} onPreview={props.onFootnotePreview} />
                 </li>
               ))}
             </ol>

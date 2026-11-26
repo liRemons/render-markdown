@@ -104,6 +104,7 @@ import 'remons-render-markdown/style.css';
 - **registerCdn**: 注册懒加载资源（如 mermaid）的默认 CDN 地址
 - **countWords**: Markdown 感知的字数统计函数，剥离语法标记后按正文计数，返回 `WordCountResult`
 - **formatWordCount** / **DEFAULT_WORD_COUNT_TEMPLATE**: 按 `{字段名}` 模板渲染字数文案（与组件 `wordCountTemplate` 同一实现）与内置默认模板 `'字数 {total}'`
+- **FootnoteItem**: 结构化脚注条目类型（`docName` / `details` / `pageNo` / `type` / `previewable`）
 
 ### RenderMarkdown 组件 Props
 
@@ -118,7 +119,8 @@ import 'remons-render-markdown/style.css';
 | html | boolean | ❌ | `true` | 是否渲染源码中的原生 HTML；不可信内容请设为 `false`（增量/非增量均生效，初始化语义） |
 | validateLink | (url: string) => boolean | ❌ | `defaultValidateLink` | 覆盖链接校验（初始化语义）；不传则用本库默认（markdown-it 名单 + 放行内联 svg），详见《注意事项》第 12 条 |
 | footnoteLabel | string | ❌ | `'注释'` | 脚注区展开/收起开关（`<summary>`）的文案，有脚注时自动追加条数（如 `注释（3）`）；初始化语义，仅内容含脚注时生效 |
-| footnoteItems | ReactNode[] | ❌ | - | 业务方自定义的文末脚注条目数组，`[n - 1]` 对应正文 `[^n]`；包只按正文实际定义了的脚注渲染对应条目，未引用的数组项不会显示；点击/预览等交互由传入组件自行实现 |
+| footnoteItems | Array<FootnoteItem \| null> | ❌ | - | 业务方自定义的文末脚注条目数组，`[n - 1]` 对应正文 `[^n]`；包按正文实际定义了的脚注渲染对应条目，未引用的数组项不会显示；行内编号、图标、文档名、章节/页码和预览按钮由包统一渲染 |
+| onFootnotePreview | (citation: number) => void | ❌ | - | 点击脚注行「查看全文」时触发，参数为从 1 开始的脚注编号；仅当对应条目 `previewable` 为 true 时显示按钮 |
 | footnoteSummary | ReactNode | ❌ | - | 自定义脚注区标题，覆盖默认的 `footnoteLabel（条目数）`；用于「5 处引用 · 2 篇文档」等业务聚合口径，仅使用 footnoteItems 时生效 |
 | incremental | boolean | ❌ | `false` | 是否启用 morphdom 增量渲染 |
 | incrementalThrottleMs | number | ❌ | `16` | 增量渲染节流窗口（ms） |

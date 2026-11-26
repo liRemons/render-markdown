@@ -1,5 +1,5 @@
 import RenderMarkdown from './components/RenderMarkdown';
-import type { RenderMarkdownProps } from './components/RenderMarkdown';
+import type { RenderMarkdownProps, FootnoteItem } from './components/RenderMarkdown';
 /**
  * markdownFormat
  * Markdown 解析函数（异步：内部等待 KaTeX CDN 就绪；加载失败时公式降级为文本）
@@ -73,7 +73,7 @@ import type { WordCountResult } from './utils/wordCount'
 
 export default RenderMarkdown;
 
-export type { RenderMarkdownProps, MarkdownPlugin, AnchorItem, ThemeMode, ICircledClass, WordCountResult };
+export type { RenderMarkdownProps, FootnoteItem, MarkdownPlugin, AnchorItem, ThemeMode, ICircledClass, WordCountResult };
 export {
   countWords,
   formatWordCount,
