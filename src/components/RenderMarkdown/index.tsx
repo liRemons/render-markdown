@@ -283,7 +283,7 @@ function FootnoteRow({
   return (
     <div className={`source-footnote${canPreview ? ' is-previewable' : ''}`}>
       <span className="source-footnote-citation-number" aria-label={`引用编号 ${citation}`}>
-        [{citation}]
+        {citation}
       </span>
       {hasImage ? (
         <PictureOutlined className="source-footnote-icon" />
