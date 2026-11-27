@@ -113,6 +113,10 @@ $$
 \\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}
 $$
 
+单行块级公式：
+
+$$ROE = \\text{净利率} \\times \\text{总资产周转率} \\times \\text{权益乘数}$$
+
 ## 四、Mermaid 图表
 
 \`\`\`mermaid

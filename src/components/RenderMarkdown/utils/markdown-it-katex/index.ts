@@ -88,8 +88,39 @@ export function katexPlugin(md: any, options: KatexPluginOptions = {}): void {
         const max = state.eMarks[startLine];
 
         if (pos + 2 > max || state.src.slice(pos, pos + 2) !== '$$') return false;
+
+        const afterOpen = state.src.slice(pos + 2, max);
+
+        // 单行块级公式：$$ formula $$。AI/接口输出与普通 Markdown 里很常见，
+        // 旧实现只找“单独一行 $$”的闭合标签，会把这类公式当成未闭合块或直接漏掉。
+        let inlineClose = -1;
+        for (let i = 0; i < afterOpen.length - 1; i++) {
+            if (
+                afterOpen[i] === '$' &&
+                afterOpen[i + 1] === '$' &&
+                afterOpen[i - 1] !== '\\'
+            ) {
+                inlineClose = i;
+                break;
+            }
+        }
+        if (inlineClose >= 0) {
+            if (silent) return true;
+            const content = afterOpen.slice(0, inlineClose).trim();
+            if (!content) return false;
+
+            state.line = startLine + 1;
+            const token = state.push('katex_block', 'math', 0);
+            token.block = true;
+            token.markup = '$$';
+            token.content = content;
+            token.map = [startLine, state.line];
+            return true;
+        }
+
         if (silent) return true;
 
+        // 多行块级公式：开头 $$ 后可以没有内容，也可以把第一行内容写在 $$ 后面。
         let nextLine = startLine + 1;
         let found = false;
 
@@ -103,15 +134,19 @@ export function katexPlugin(md: any, options: KatexPluginOptions = {}): void {
             nextLine++;
         }
 
-        const contentStart = state.bMarks[startLine + 1];
-        const contentEnd = found ? state.bMarks[nextLine] : state.eMarks[endLine - 1];
+        const contentLines: string[] = [];
+        if (afterOpen.trim()) contentLines.push(afterOpen.trim());
+        for (let line = startLine + 1; line < nextLine; line++) {
+            const linePos = state.bMarks[line] + state.tShift[line];
+            contentLines.push(state.src.slice(linePos, state.eMarks[line]));
+        }
 
         state.line = nextLine + (found ? 1 : 0);
 
         const token = state.push('katex_block', 'math', 0);
         token.block = true;
         token.markup = '$$';
-        token.content = state.src.slice(contentStart, contentEnd).trim();
+        token.content = contentLines.join('\n').trim();
         token.map = [startLine, state.line];
 
         return true;
